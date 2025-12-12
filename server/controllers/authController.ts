@@ -71,4 +71,4 @@ const register = async (req: Request, res: Response) => {
     }
 }
 
-export { login, verify };
+export { login, register, verify };
