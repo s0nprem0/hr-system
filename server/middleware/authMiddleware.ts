@@ -15,19 +15,29 @@ declare global {
 
 const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
     if (!token) {
-      return res.status(404).json({ success: false, error: "Token not provided" });
+      return res.status(401).json({ success: false, error: "Token not provided" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayload;
-    if (!decoded) {
-      return res.status(404).json({ success: false, error: "Token not valid" });
+    const jwtKey = process.env.JWT_KEY;
+    if (!jwtKey) {
+      console.error('JWT_KEY is not set in environment');
+      return res.status(500).json({ success: false, error: 'Server misconfiguration' });
     }
 
-    const user = await User.findById(decoded._id).select("-password");
+    let decoded: JwtPayload;
+    try {
+      decoded = jwt.verify(token, jwtKey) as JwtPayload;
+    } catch (err) {
+      return res.status(401).json({ success: false, error: 'Token not valid' });
+    }
+
+    const user = await User.findById((decoded as any)._id).select("-password");
     if (!user) {
-      return res.status(404).json({ success: false, error: "User not found" });
+      return res.status(401).json({ success: false, error: "User not found" });
     }
 
     req.user = user;

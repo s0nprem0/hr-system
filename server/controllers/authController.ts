@@ -9,17 +9,23 @@ const login = async (req: Request, res: Response) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(404).json({ success: false, error: "User Not Found" });
+            return res.status(401).json({ success: false, error: "Invalid credentials" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(404).json({ success: false, error: "Wrong Password" });
+            return res.status(401).json({ success: false, error: "Invalid credentials" });
+        }
+
+        const jwtKey = process.env.JWT_KEY;
+        if (!jwtKey) {
+            console.error('JWT_KEY is not set in environment');
+            return res.status(500).json({ success: false, error: 'Server misconfiguration' });
         }
 
         const token = jwt.sign(
             { _id: user._id, role: user.role },
-            process.env.JWT_KEY!,
+            jwtKey,
             { expiresIn: "10d" }
         );
 
