@@ -13,6 +13,25 @@ const Navbar = () => {
             {auth?.user ? (
               <>
                 <Link to="/dashboard" className="muted">Dashboard</Link>
+                {/* Role-based links */}
+                {auth.user.role === 'admin' && (
+                  <>
+                    <Link to="/users" className="muted">Users</Link>
+                  </>
+                )}
+                {auth.user.role === 'hr' && (
+                  <>
+                    <Link to="/employees" className="muted">Employees</Link>
+                    <Link to="/departments" className="muted">Departments</Link>
+                    <Link to="/payroll" className="muted">Payroll</Link>
+                  </>
+                )}
+                {auth.user.role === 'employee' && (
+                  <>
+                    <Link to="/profile" className="muted">Profile</Link>
+                  </>
+                )}
+
                 <span className="muted">{auth.user.name}</span>
                 <button className="btn" onClick={() => { auth.logout(); window.location.href = '/login'; }}>Logout</button>
               </>
