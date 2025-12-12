@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import authRouter from './routes/auth';
+import errorHandler from './middleware/errorHandler';
 
 // Load environment variables from .env if present
 dotenv.config();
@@ -30,6 +31,14 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
+
+// Health endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+// Centralized error handler (must be after routes)
+app.use(errorHandler);
 
 // Connect to MongoDB (safe: avoid passing undefined to mongoose.connect)
 const connectDB = async () => {
