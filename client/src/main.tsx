@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 import AuthContext from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
 
 // Initialize Catppuccin theme variant on load.
 // Priority: localStorage 'theme' -> system preference
@@ -25,7 +26,9 @@ applyInitialTheme()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthContext>
-      <App />
+      <ToastProvider>
+        <App />
+      </ToastProvider>
     </AuthContext>
   </StrictMode>,
 )

@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
 import axios from 'axios';
+import handleApiError from '../utils/handleApiError';
+import { useToast } from '../context/ToastContext';
 
 interface Employee {
   _id: string;
@@ -31,9 +33,8 @@ const EmployeesList = () => {
       setItems(data?.items || []);
       setTotal(data?.total || 0);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) setError(err.response?.data?.error?.message || err.message);
-      else if (err instanceof Error) setError(err.message);
-      else setError('Failed to load employees');
+      const apiErr = handleApiError(err);
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }
@@ -44,17 +45,17 @@ const EmployeesList = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search]);
 
+  const toast = useToast();
+
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this employee? This action cannot be undone.')) return;
     try {
       await api.delete(`/api/employees/${id}`);
       // refresh
       fetchList();
-    } catch (err) {
-      // ignore: api will emit unauthorized if needed
-      // show alert for now
-      // eslint-disable-next-line no-alert
-      alert('Failed to delete employee');
+    } catch (err: unknown) {
+      const apiErr = handleApiError(err);
+      toast.showToast(apiErr.message, 'error');
     }
   };
 

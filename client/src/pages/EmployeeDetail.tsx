@@ -2,6 +2,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
 import axios from 'axios';
+import handleApiError from '../utils/handleApiError';
+import { useToast } from '../context/ToastContext';
 
 interface Employee {
   _id: string;
@@ -27,9 +29,8 @@ const EmployeeDetail = () => {
       const res = await api.get(`/api/employees/${id}`);
       setEmployee(res.data?.data || null);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) setError(err.response?.data?.error?.message || err.message);
-      else if (err instanceof Error) setError(err.message);
-      else setError('Failed to load employee');
+      const apiErr = handleApiError(err);
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }
@@ -37,15 +38,17 @@ const EmployeeDetail = () => {
 
   useEffect(() => { fetchEmployee(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
 
+  const toast = useToast();
+
   const handleDelete = async () => {
     if (!id) return;
     if (!confirm('Delete this employee?')) return;
     try {
       await api.delete(`/api/employees/${id}`);
       navigate('/employees');
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert('Failed to delete employee');
+    } catch (err: unknown) {
+      const apiErr = handleApiError(err);
+      toast.showToast(apiErr.message, 'error');
     }
   };
 

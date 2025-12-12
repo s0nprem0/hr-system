@@ -1,0 +1,42 @@
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+
+type ToastType = 'info' | 'success' | 'error' | 'warning';
+interface Toast { id: number; message: string; type?: ToastType; duration?: number }
+
+const ToastContext = createContext<{ showToast: (msg: string, type?: ToastType, duration?: number) => void } | null>(null);
+
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const idRef = React.useRef(1);
+
+  const showToast = useCallback((message: string, type: ToastType = 'info', duration = 3000) => {
+    const id = idRef.current++;
+    setToasts((t) => [...t, { id, message, type, duration }]);
+    window.setTimeout(() => {
+      setToasts((t) => t.filter((x) => x.id !== id));
+    }, duration + 200);
+  }, []);
+
+  const value = useMemo(() => ({ showToast }), [showToast]);
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <div aria-live="polite" className="fixed z-50 top-4 right-4 flex flex-col gap-2">
+        {toasts.map((t) => (
+          <div key={t.id} className={`px-4 py-2 rounded shadow text-sm max-w-xs break-words ${t.type === 'success' ? 'bg-green-100 text-green-900' : t.type === 'error' ? 'bg-red-100 text-red-900' : 'bg-slate-100 text-slate-900'}`}>
+            {t.message}
+          </div>
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+};
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
+  return ctx;
+}
+
+export default ToastContext;

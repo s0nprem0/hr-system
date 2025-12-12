@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
-import axios from 'axios';
+import handleApiError from '../utils/handleApiError';
+import { useToast } from '../context/ToastContext';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const EmployeeForm = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
   const navTimeout = useRef<number | null>(null);
+  const toast = useToast();
 
   const fetchDepartments = async () => {
     try {
@@ -41,9 +43,8 @@ const EmployeeForm = () => {
       setRole(e?.role || 'employee');
       setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) setError(err.response?.data?.error?.message || err.message);
-      else if (err instanceof Error) setError(err.message);
-      else setError('Failed to load employee');
+      const apiErr = handleApiError(err);
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }
@@ -75,7 +76,7 @@ const EmployeeForm = () => {
       setFormErrors(errs);
       return;
     }
-    const payload: any = { name, email, role, profile: { department: departmentId } };
+    const payload: Record<string, unknown> = { name, email, role, profile: { department: departmentId } };
     if (!isEdit && password) payload.password = password;
     if (isEdit && password) payload.password = password; // allow changing password
 
@@ -84,30 +85,28 @@ const EmployeeForm = () => {
       if (isEdit && params.id) {
         await api.put(`/api/employees/${params.id}`, payload);
         setSuccess('Employee updated');
+        toast.showToast('Employee updated', 'success');
         // give user a chance to see success message
         navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900) as unknown as number;
       } else {
         const res = await api.post('/api/employees', { ...payload, password });
         const created = res.data?.data;
         setSuccess('Employee created');
+        toast.showToast('Employee created', 'success');
         navTimeout.current = window.setTimeout(() => navigate(`/employees/${created?._id || ''}`), 900) as unknown as number;
       }
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        const resp = err.response?.data?.error;
-        // Map server validation errors (express-validator) to form fields
-        if (resp?.details && Array.isArray(resp.details)) {
-          const fieldErrors: Record<string, string> = {};
-          for (const d of resp.details) {
-            if (d.param && d.msg) fieldErrors[d.param] = d.msg;
-          }
-          setFormErrors(fieldErrors);
-          setError(resp?.message || 'Validation failed');
-        } else {
-          setError(resp?.message || err.message);
+      const apiErr = handleApiError(err);
+      if (apiErr.details && Array.isArray(apiErr.details)) {
+        const fieldErrors: Record<string, string> = {};
+        for (const d of apiErr.details) {
+          if (d.param && d.msg) fieldErrors[d.param] = d.msg;
         }
-      } else if (err instanceof Error) setError(err.message);
-      else setError('Failed to save employee');
+        setFormErrors(fieldErrors);
+        setError(apiErr.message || 'Validation failed');
+      } else {
+        setError(apiErr.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -119,7 +118,7 @@ const EmployeeForm = () => {
         clearTimeout(navTimeout.current as unknown as number);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   return (
@@ -151,7 +150,7 @@ const EmployeeForm = () => {
 
           <div>
             <label className="block text-sm font-medium">Role</label>
-            <select className="input" value={role} onChange={(e) => setRole(e.target.value as any)}>
+            <select className="input" value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
               <option value="employee">Employee</option>
               <option value="hr">HR</option>
               <option value="admin">Admin</option>
