@@ -18,7 +18,7 @@ const Login = () => {
       const res = await api.post('/api/auth/login', { email, password });
       if (res.data?.success) {
         const token = res.data.token;
-        try { localStorage.setItem('token', token); } catch (e) {}
+        try { localStorage.setItem('token', token); } catch { /* ignore storage errors */ }
         auth?.login(res.data.user, token);
         // Redirect to unified dashboard
         navigate('/dashboard');

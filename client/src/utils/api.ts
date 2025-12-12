@@ -16,8 +16,8 @@ api.interceptors.request.use((config) => {
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-  } catch (e) {
-    // ignore
+  } catch {
+    // ignore storage errors
   }
   return config;
 });
@@ -29,8 +29,10 @@ api.interceptors.response.use(
     const status = err?.response?.status;
     if (status === 401) {
       try {
-        localStorage.removeItem('token');
-      } catch (e) {}
+          localStorage.removeItem('token');
+        } catch {
+          // ignore storage errors
+        }
       // Redirect to login (hard navigation to avoid hooks)
       if (typeof window !== 'undefined') {
         window.location.href = '/login';

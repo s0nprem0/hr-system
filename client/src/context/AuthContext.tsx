@@ -50,14 +50,18 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
             if (token) {
                 localStorage.setItem('token', token);
             }
-        } catch (e) {}
+        } catch {
+            // ignore storage errors
+        }
     };
 
     const logout = () => {
         setUser(null);
         try {
             localStorage.removeItem('token');
-        } catch (e) {}
+        } catch {
+            // ignore storage errors
+        }
     };
 
     return (
