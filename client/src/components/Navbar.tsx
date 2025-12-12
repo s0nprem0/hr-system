@@ -12,6 +12,7 @@ const Navbar = () => {
           <nav className="flex items-center gap-3">
             {auth?.user ? (
               <>
+                <Link to="/dashboard" className="muted">Dashboard</Link>
                 <span className="muted">{auth.user.name}</span>
                 <button className="btn" onClick={() => { auth.logout(); window.location.href = '/login'; }}>Logout</button>
               </>

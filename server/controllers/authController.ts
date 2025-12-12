@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { validationResult } from 'express-validator';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -42,6 +43,32 @@ const login = async (req: Request, res: Response) => {
 
 const verify = (req: Request, res: Response) => {
     return res.status(200).json({ success: true, user: req.user });
+}
+
+const register = async (req: Request, res: Response) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ success: false, errors: errors.array() });
+        }
+
+        const { name, email, password } = req.body;
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(409).json({ success: false, error: 'Email already in use' });
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+        const created = await User.create({ name, email, password: hashed, role: 'employee' });
+
+        return res.status(201).json({
+            success: true,
+            user: { _id: created._id, name: created.name, role: created.role },
+        });
+    } catch (err: any) {
+        console.error('Register error:', err);
+        return res.status(500).json({ success: false, error: 'Server error' });
+    }
 }
 
 export { login, verify };
