@@ -1,18 +1,25 @@
 import express from 'express';
 import verifyUser from '../middleware/authMiddleware';
 import authorize from '../middleware/authorize';
+import { body, param } from 'express-validator';
+import departmentsController from '../controllers/departmentsController';
 
 const router = express.Router();
 
-// List departments - admin and hr
-router.get('/', verifyUser, authorize(['admin', 'hr']), async (req, res) => {
-  return res.json({ success: true, data: [], message: 'Departments list (placeholder)' });
-});
+router.get('/', verifyUser, authorize(['admin', 'hr']), departmentsController.listDepartments);
 
-// Create department - admin only
-router.post('/', verifyUser, authorize(['admin']), async (req, res) => {
-  // TODO: create department
-  return res.status(201).json({ success: true, message: 'Department created (placeholder)' });
-});
+router.post(
+  '/',
+  verifyUser,
+  authorize(['admin']),
+  [body('name').trim().notEmpty().withMessage('Name is required')],
+  departmentsController.createDepartment,
+);
+
+router.get('/:id', verifyUser, authorize(['admin', 'hr']), [param('id').isMongoId().withMessage('Invalid id')], departmentsController.getDepartment);
+
+router.put('/:id', verifyUser, authorize(['admin']), [param('id').isMongoId().withMessage('Invalid id'), body('name').optional().trim()], departmentsController.updateDepartment);
+
+router.delete('/:id', verifyUser, authorize(['admin']), [param('id').isMongoId().withMessage('Invalid id')], departmentsController.deleteDepartment);
 
 export default router;
