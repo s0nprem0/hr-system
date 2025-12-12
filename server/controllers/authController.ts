@@ -4,6 +4,7 @@ import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import logger from '../logger';
+import { sendSuccess, sendError } from '../utils/apiResponse';
 
 const login = async (req: Request, res: Response) => {
     try {
@@ -11,12 +12,12 @@ const login = async (req: Request, res: Response) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(401).json({ success: false, error: "Invalid credentials" });
+            return sendError(res, 'Invalid credentials', 401);
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({ success: false, error: "Invalid credentials" });
+            return sendError(res, 'Invalid credentials', 401);
         }
 
         const jwtKey = process.env.JWT_KEY;
@@ -24,7 +25,7 @@ const login = async (req: Request, res: Response) => {
             // Use logger if available; require dynamically to avoid circular import errors
             const { default: logger } = await import('../logger');
             logger.error('JWT_KEY is not set in environment');
-            return res.status(500).json({ success: false, error: 'Server misconfiguration' });
+            return sendError(res, 'Server misconfiguration', 500);
         }
 
         const token = jwt.sign(
@@ -33,47 +34,40 @@ const login = async (req: Request, res: Response) => {
             { expiresIn: "10d" }
         );
 
-        return res.status(200).json({
-            success: true,
-            token,
-            user: { _id: user._id, name: user.name, role: user.role }
-        });
+        return sendSuccess(res, { token, user: { _id: user._id, name: user.name, role: user.role } }, 200);
 
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
         logger.error({ err: error }, 'Login error');
-        return res.status(500).json({ success: false, error: message });
+        return sendError(res, message, 500);
     }
 };
 
 const verify = (req: Request, res: Response) => {
-    return res.status(200).json({ success: true, user: req.user });
+    return sendSuccess(res, { user: req.user }, 200);
 }
 
 const register = async (req: Request, res: Response) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ success: false, errors: errors.array() });
+            return sendError(res, 'Validation failed', 400, errors.array());
         }
 
         const { name, email, password } = req.body;
         const existing = await User.findOne({ email });
         if (existing) {
-            return res.status(409).json({ success: false, error: 'Email already in use' });
+            return sendError(res, 'Email already in use', 409);
         }
 
         const hashed = await bcrypt.hash(password, 10);
         const created = await User.create({ name, email, password: hashed, role: 'employee' });
 
-        return res.status(201).json({
-            success: true,
-            user: { _id: created._id, name: created.name, role: created.role },
-        });
+        return sendSuccess(res, { user: { _id: created._id, name: created.name, role: created.role } }, 201);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'Register error');
-        return res.status(500).json({ success: false, error: message });
+        return sendError(res, message, 500);
     }
 }
 
