@@ -49,11 +49,6 @@ const verify = (req: Request, res: Response) => {
 
 const register = async (req: Request, res: Response) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return sendError(res, 'Validation failed', 400, errors.array());
-        }
-
         const { name, email, password } = req.body;
         const existing = await User.findOne({ email });
         if (existing) {

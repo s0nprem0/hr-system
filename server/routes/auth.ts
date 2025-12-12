@@ -4,6 +4,7 @@ import verifyUser from '../middleware/authMiddleware';
 import authorize from '../middleware/authorize';
 import loginRateLimiter from '../middleware/rateLimit';
 import { body } from 'express-validator';
+import validationHandler from '../middleware/validationHandler';
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ router.post(
 		body('email').isEmail().withMessage('Valid email required'),
 		body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 	],
+	validationHandler,
 	register,
 );
 
@@ -25,6 +27,7 @@ router.post(
 		body('password').notEmpty().withMessage('Password is required'),
 	],
 	loginRateLimiter,
+	validationHandler,
 	login,
 );
 router.get('/verify', verifyUser, verify);

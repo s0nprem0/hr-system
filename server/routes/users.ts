@@ -1,6 +1,9 @@
 import express from 'express';
 import verifyUser from '../middleware/authMiddleware';
 import authorize from '../middleware/authorize';
+import validationHandler from '../middleware/validationHandler';
+import { param } from 'express-validator';
+import type { Request, Response } from 'express';
 import User from '../models/User';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 
@@ -39,16 +42,23 @@ router.get('/', verifyUser, authorize(['admin', 'hr']), async (req, res) => {
 });
 
 // Delete user - admin only
-router.delete('/:id', verifyUser, authorize(['admin']), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await User.findByIdAndDelete(id).select('-password').lean();
-    if (!deleted) return sendError(res, 'User not found', 404);
-    return sendSuccess(res, { user: deleted });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return sendError(res, msg, 500);
-  }
-});
+router.delete(
+  '/:id',
+  verifyUser,
+  authorize(['admin']),
+  [param('id').isMongoId().withMessage('Invalid id')],
+  validationHandler,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const deleted = await User.findByIdAndDelete(id).select('-password').lean();
+      if (!deleted) return sendError(res, 'User not found', 404);
+      return sendSuccess(res, { user: deleted });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return sendError(res, msg, 500);
+    }
+  },
+);
 
 export default router;
