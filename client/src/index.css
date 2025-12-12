@@ -1,3 +1,96 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* -------------------------------
+   DESIGN TOKENS + GLOBAL BASE
+-------------------------------- */
+:root {
+  --bg: #f8fafc;
+  --muted: #6b7280;
+
+  /* Catppuccin Latte (light mode) */
+  --cp-bg: #eff1f5;
+  --cp-surface: #ffffff;
+  --cp-muted: #6c6f85;
+  --cp-text: #1e2030;
+  --cp-primary: #f2cdcd;
+  --cp-primary-foreground: #2a2a37;
+  --cp-primary-hover: #e6c3c3;
+  --cp-accent: #f5bde6;
+  --cp-accent-foreground: #3a2b3b;
+  --cp-border: #e6e9ef;
+  --cp-success: #b7f0ad;
+  --cp-warning: #ffd580;
+  --cp-danger: #ffb6b6;
+}
+
+/* Catppuccin Mocha (dark mode) */
+.theme-catppuccin-dark {
+  --cp-bg: #1f1d2e;
+  --cp-surface: #11111b;
+  --cp-muted: #9aa0b4;
+  --cp-text: #cdd6f4;
+  --cp-primary: #f5c2e7;
+  --cp-primary-foreground: #221826;
+  --cp-primary-hover: #f0bfe0;
+  --cp-accent: #89dceb;
+  --cp-accent-foreground: #062027;
+  --cp-border: #2a2a3a;
+  --cp-success: #5bdc8a;
+  --cp-warning: #f5a97f;
+  --cp-danger: #f38ba8;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial;
+}
+
+/* translucent header */
+.app-header {
+  @apply text-base; /* Apply Tailwind utility */
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background-color: color-mix(in srgb, var(--cp-surface) 82%, var(--cp-bg) 18%);
+  border-bottom: 1px solid var(--cp-border);
+  color: var(--cp-text);
+}
+
+/* button */
+.btn {
+  @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-shadow shadow-sm; /* Apply Tailwind utilities */
+  background-color: var(--cp-primary);
+  color: var(--cp-primary-foreground);
+}
+
+.btn:hover {
+  background-color: var(--cp-primary-hover);
+}
+
+/* card */
+.card {
+  @apply rounded-lg p-6 shadow; /* Apply Tailwind utilities */
+  background-color: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  /* custom shadow stays raw CSS */
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+}
+
+/* container */
+.container-main {
+  @apply max-w-5xl mx-auto px-4; /* Apply Tailwind utilities */
+}
+
+/* muted text */
+.muted {
+  @apply text-sm; /* Apply Tailwind utility */
+  color: var(--cp-muted);
+}
