@@ -18,9 +18,8 @@ const Login = () => {
       if (res.data.success) {
         localStorage.setItem('token', res.data.token);
         auth?.login(res.data.user);
-        // Redirect based on role
-        if (res.data.user.role === 'admin') navigate('/admin-dashboard');
-        else navigate('/employee-dashboard');
+        // Redirect to unified dashboard
+        navigate('/dashboard');
       } else {
         setError(res.data.error || 'Login failed');
       }

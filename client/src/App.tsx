@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import Login from './pages/Login';
-import AdminDashboard from './pages/AdminDashboard';
-import EmployeeDashboard from './pages/EmployeeDashboard';
+import Dashboard from './pages/Dashboard';
 import PrivateRoutes from './utils/PrivateRoutes';
 import Navbar from './components/Navbar';
 
@@ -16,22 +15,12 @@ function App() {
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
 
-            {/* ADMIN ROUTES */}
+            {/* Unified Dashboard */}
             <Route
-              path="/admin-dashboard"
+              path="/dashboard"
               element={
-                <PrivateRoutes requiredRole={["admin"]}>
-                  <AdminDashboard />
-                </PrivateRoutes>
-              }
-            />
-
-            {/* EMPLOYEE ROUTES */}
-            <Route
-              path="/employee-dashboard"
-              element={
-                <PrivateRoutes requiredRole={["employee", "admin", "hr"]}>
-                  <EmployeeDashboard />
+                <PrivateRoutes requiredRole={["admin", "hr", "employee"]}>
+                  <Dashboard />
                 </PrivateRoutes>
               }
             />
