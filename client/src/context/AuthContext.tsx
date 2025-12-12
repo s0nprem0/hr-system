@@ -19,7 +19,7 @@ interface AuthContextType {
 
 const userContext = createContext<AuthContextType | null>(null);
 
-export const AuthContext = ({ children }: { children: ReactNode }) => {
+export function AuthContext({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -37,7 +37,7 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
                 } else {
                     setUser(null);
                 }
-            } catch (error) {
+            } catch {
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -61,8 +61,8 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
         };
     }, []);
 
-    const login = (user: User, token?: string) => {
-        setUser(user);
+    function login(userParam: User, token?: string) {
+        setUser(userParam);
         try {
             if (token) {
                 localStorage.setItem('token', token);
@@ -70,23 +70,26 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
         } catch {
             // ignore storage errors
         }
-    };
+    }
 
-    const logout = () => {
+    function logout() {
         setUser(null);
         try {
             localStorage.removeItem('token');
         } catch {
             // ignore storage errors
         }
-    };
+    }
 
     return (
         <userContext.Provider value={{ user, login, logout, loading }}>
             {children}
         </userContext.Provider>
     );
-};
+}
 
-export const useAuth = () => useContext(userContext);
+export function useAuth() {
+    return useContext(userContext);
+}
+
 export default AuthContext;

@@ -3,6 +3,7 @@ import type { JwtPayload } from "jsonwebtoken";
 
 import type { Request, Response, NextFunction } from "express";
 import User, { IUser } from "../models/User";
+import logger from '../logger';
 
 // 1. Extend the Express Request interface to include 'user'
 declare global {
@@ -47,7 +48,9 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
 
     req.user = user;
     next();
-  } catch (error) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error({ err }, `verifyUser error: ${message}`);
     return res.status(500).json({ success: false, error: "Server Error" });
   }
 };
