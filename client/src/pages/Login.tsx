@@ -17,13 +17,15 @@ const Login = () => {
     try {
       const res = await api.post('/api/auth/login', { email, password });
       if (res.data?.success) {
-        const token = res.data.token;
-        try { localStorage.setItem('token', token); } catch { /* ignore storage errors */ }
-        auth?.login(res.data.user, token);
+        // server returns standardized payload: { success: true, data: { token, user } }
+        const token = res.data?.data?.token;
+        const user = res.data?.data?.user;
+        try { if (token) localStorage.setItem('token', token); } catch { /* ignore storage errors */ }
+        auth?.login(user, token);
         // Redirect to unified dashboard
         navigate('/dashboard');
       } else {
-        setError(res.data.error || 'Login failed');
+        setError(res.data?.error?.message || res.data?.error || 'Login failed');
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

@@ -30,7 +30,9 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
                 if (token) {
                     const response = await api.get('/api/auth/verify');
                     if (response.data?.success) {
-                        setUser(response.data.user);
+                        // server standardised responses are wrapped in `data`
+                        // e.g. { success: true, data: { user: ... } }
+                        setUser(response.data?.data?.user ?? null);
                     }
                 } else {
                     setUser(null);
@@ -42,6 +44,21 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
             }
         };
         verifyUser();
+        // Listen for global unauthorized events emitted by the API layer
+        const onUnauthorized = () => {
+            try {
+                localStorage.removeItem('token');
+            } catch {
+                // ignore
+            }
+            setUser(null);
+            // redirect to login
+            if (typeof window !== 'undefined') window.location.href = '/login';
+        };
+        window.addEventListener('auth:unauthorized', onUnauthorized as EventListener);
+        return () => {
+            window.removeEventListener('auth:unauthorized', onUnauthorized as EventListener);
+        };
     }, []);
 
     const login = (user: User, token?: string) => {
