@@ -60,11 +60,11 @@ const createPayroll = async (req: Request, res: Response) => {
 
     // audit log
     try {
-      await AuditLog.create({
-        collection: 'Payroll',
+        await AuditLog.create({
+        collectionName: 'Payroll',
         documentId: entry._id,
         action: 'create',
-        user: req.user?.id ?? req.user?._id,
+        user: req.user?._id,
         before: null,
         after: result,
       });
@@ -97,10 +97,10 @@ const updatePayroll = async (req: Request, res: Response) => {
 
     try {
       await AuditLog.create({
-        collection: 'Payroll',
+        collectionName: 'Payroll',
         documentId: id,
         action: 'update',
-        user: req.user?.id ?? req.user?._id,
+        user: req.user?._id,
         before,
         after: updated,
       });
@@ -124,10 +124,10 @@ const deletePayroll = async (req: Request, res: Response) => {
 
     try {
       await AuditLog.create({
-        collection: 'Payroll',
+        collectionName: 'Payroll',
         documentId: id,
         action: 'delete',
-        user: req.user?.id ?? req.user?._id,
+        user: req.user?._id,
         before: removed,
         after: null,
       });

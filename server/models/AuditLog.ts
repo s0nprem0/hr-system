@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAuditLog extends Document {
-  collection: string;
+  collectionName: string;
   documentId: mongoose.Types.ObjectId | string;
   action: 'create' | 'update' | 'delete';
   user?: mongoose.Types.ObjectId;
@@ -11,7 +11,7 @@ export interface IAuditLog extends Document {
 }
 
 const auditSchema: Schema = new Schema({
-  collection: { type: String, required: true },
+  collectionName: { type: String, required: true },
   documentId: { type: Schema.Types.Mixed, required: true },
   action: { type: String, enum: ['create', 'update', 'delete'], required: true },
   user: { type: Schema.Types.ObjectId, ref: 'User' },
