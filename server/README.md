@@ -23,10 +23,12 @@ Notes
 Developer tips
 --------------
 
-- The server dev script uses `ts-node-dev`/`ts-node`. If you prefer Node/npm, install the dev dependencies and run:
+- The server dev script uses `tsx` for a fast zero-config TypeScript runtime. Install and run:
 
 ```bash
 # from server/
-npm install -D ts-node ts-node-dev
+npm install -D tsx
 npm run dev
 ```
+
+If you prefer a compile step, use `tsc` + `nodemon` instead.
