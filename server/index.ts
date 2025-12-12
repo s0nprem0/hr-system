@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import authRouter from './routes/auth';
 import errorHandler from './middleware/errorHandler';
+import logger from './logger';
 
 // Load environment variables from .env if present
 dotenv.config();
@@ -16,7 +17,7 @@ const requiredEnvs = [
 ];
 const missing = requiredEnvs.filter((k) => !process.env[k]);
 if (missing.length) {
-    console.error(`Missing required env vars: ${missing.join(', ')}. Set them in .env or the environment.`);
+    logger.error(`Missing required env vars: ${missing.join(', ')}. Set them in .env or the environment.`);
     process.exit(1);
 }
 
@@ -24,7 +25,6 @@ const app = express();
 
 // Middleware
 // Security and logging middlewares
-import logger from './logger';
 
 const clientUrl = process.env.CLIENT_URL;
 if (!clientUrl) {
@@ -81,6 +81,6 @@ connectDB().then((ok) => {
             logger.info(`Server is running on port ${PORT}`);
     });
 }).catch((err) => {
-    console.error('Unexpected error during startup:', err);
+    logger.error({ err }, 'Unexpected error during startup');
     process.exit(1);
 });

@@ -2,15 +2,19 @@ import jwt from "jsonwebtoken";
 import type { JwtPayload } from "jsonwebtoken";
 
 import type { Request, Response, NextFunction } from "express";
-import User from "../models/User";
+import User, { IUser } from "../models/User";
 
 // 1. Extend the Express Request interface to include 'user'
 declare global {
   namespace Express {
     interface Request {
-      user?: any; // Or IUser if you’ve got that interface
+      user?: IUser;
     }
   }
+}
+
+interface JwtPayloadWithId extends JwtPayload {
+  _id?: string;
 }
 
 const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -29,14 +33,14 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
       return res.status(500).json({ success: false, error: 'Server misconfiguration' });
     }
 
-    let decoded: JwtPayload;
+    let decodedWithId: JwtPayloadWithId;
     try {
-      decoded = jwt.verify(token, jwtKey) as JwtPayload;
+      decodedWithId = jwt.verify(token, jwtKey) as JwtPayloadWithId;
     } catch (err) {
       return res.status(401).json({ success: false, error: 'Token not valid' });
     }
 
-    const user = await User.findById((decoded as any)._id).select("-password");
+    const user = await User.findById(decodedWithId._id).select("-password");
     if (!user) {
       return res.status(401).json({ success: false, error: "User not found" });
     }

@@ -17,7 +17,15 @@ router.post(
 	register,
 );
 
-router.post('/login', loginRateLimiter, login);
+router.post(
+	'/login',
+	[
+		body('email').isEmail().withMessage('Valid email required'),
+		body('password').notEmpty().withMessage('Password is required'),
+	],
+	loginRateLimiter,
+	login,
+);
 router.get('/verify', verifyUser, verify);
 
 export default router;

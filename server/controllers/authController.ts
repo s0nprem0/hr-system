@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import logger from '../logger';
 
 const login = async (req: Request, res: Response) => {
     try {
@@ -38,8 +39,10 @@ const login = async (req: Request, res: Response) => {
             user: { _id: user._id, name: user.name, role: user.role }
         });
 
-    } catch (error: any) {
-        return res.status(500).json({ success: false, error: error.message });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        logger.error({ err: error }, 'Login error');
+        return res.status(500).json({ success: false, error: message });
     }
 };
 
@@ -67,9 +70,10 @@ const register = async (req: Request, res: Response) => {
             success: true,
             user: { _id: created._id, name: created.name, role: created.role },
         });
-    } catch (err: any) {
-        console.error('Register error:', err);
-        return res.status(500).json({ success: false, error: 'Server error' });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error({ err }, 'Register error');
+        return res.status(500).json({ success: false, error: message });
     }
 }
 
