@@ -4,7 +4,8 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { useToast } from '../context/ToastContext';
 
-type User = { _id: string; name?: string; email: string; role?: string };
+type Role = 'admin' | 'hr' | 'employee';
+type User = { _id: string; name?: string; email: string; role?: Role };
 
 const UserForm = () => {
   const navigate = useNavigate();
@@ -25,12 +26,11 @@ const UserForm = () => {
     if (!params.id) return;
     setLoading(true);
     try {
-      // reuse employees endpoint for user data
-      const res = await api.get(`/api/employees/${params.id}`);
+      const res = await api.get(`/api/users/${params.id}`);
       const u: User = res.data?.data;
       setName(u?.name || '');
       setEmail(u?.email || '');
-      setRole((u?.role as any) || 'employee');
+      setRole((u?.role) || 'employee');
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
       setError(apiErr.message);
@@ -48,15 +48,15 @@ const UserForm = () => {
     if (!email.trim()) return setError('Email is required');
     setSaving(true);
     try {
-      const payload: any = { name, email, role };
+      const payload: { name: string; email: string; role: Role; password?: string } = { name, email, role };
       if (!isEdit && password) payload.password = password;
       if (isEdit && params.id) {
-        await api.put(`/api/employees/${params.id}`, payload);
+        await api.put(`/api/users/${params.id}`, payload);
         toast.showToast('User updated', 'success');
       } else {
         // create via employees endpoint
         if (!password) return setError('Password is required for new user');
-        await api.post('/api/employees', { ...payload, password });
+        await api.post('/api/users', { ...payload, password });
         toast.showToast('User created', 'success');
       }
       navigate('/users');

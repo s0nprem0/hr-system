@@ -14,7 +14,7 @@ const listPayroll = async (req: Request, res: Response) => {
     const from = req.query.from as string | undefined;
     const to = req.query.to as string | undefined;
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (employeeId && mongoose.isValidObjectId(employeeId)) filter.employee = employeeId;
     if (from || to) filter.payDate = {};
     if (from) filter.payDate.$gte = new Date(from);
@@ -83,7 +83,7 @@ const createPayroll = async (req: Request, res: Response) => {
 const updatePayroll = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updates: any = { ...req.body };
+    const updates: Partial<Record<string, unknown>> = { ...req.body };
     if (updates.employeeId) {
       if (!mongoose.isValidObjectId(updates.employeeId)) return sendError(res, 'Invalid employee id', 400);
       updates.employee = updates.employeeId;

@@ -1,16 +1,19 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { useToast } from '../context/ToastContext';
 
-type EmployeeShort = { _id: string; name?: string; email?: string };
+interface EmployeeShort {
+  _id: string;
+  name?: string;
+  email: string;
+}
 
 const PayrollForm = () => {
   const navigate = useNavigate();
   const params = useParams();
   const isEdit = !!params.id;
-
   const [employeeId, setEmployeeId] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [payDate, setPayDate] = useState<string>('');
@@ -27,11 +30,11 @@ const PayrollForm = () => {
       const data = res.data?.data;
       setEmployees(data?.items || []);
     } catch (err: unknown) {
-      // ignore errors here but log message for user
+      console.error('Failed to fetch employees:', err);
     }
   };
 
-  const fetchPayroll = async () => {
+  const fetchPayroll = useCallback(async () => {
     if (!params.id) return;
     setLoading(true);
     try {
@@ -46,9 +49,9 @@ const PayrollForm = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
-  useEffect(() => { fetchEmployees(); if (isEdit) fetchPayroll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [params.id]);
+  useEffect(() => { fetchEmployees(); if (isEdit) fetchPayroll(); }, [params.id, fetchPayroll, isEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +60,11 @@ const PayrollForm = () => {
     if (!amount || Number.isNaN(Number(amount))) return setError('Valid amount is required');
     setSaving(true);
     try {
-      const payload = { employeeId, amount: Number(amount), payDate: payDate || undefined } as any;
+      const payload: { employeeId: string; amount: number; payDate?: string } = {
+        employeeId,
+        amount: Number(amount),
+        payDate: payDate || undefined,
+      };
       if (isEdit && params.id) {
         await api.put(`/api/payroll/${params.id}`, payload);
         toast.showToast('Payroll entry updated', 'success');
