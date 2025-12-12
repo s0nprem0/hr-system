@@ -24,9 +24,11 @@ const app = express();
 
 // Middleware
 // Security and logging middlewares
+import logger from './logger';
+
 const clientUrl = process.env.CLIENT_URL;
 if (!clientUrl) {
-    console.warn('CLIENT_URL not set — CORS will default to allowing localhost:5173 for development.');
+    logger.warn('CLIENT_URL not set — CORS will default to allowing localhost:5173 for development.');
 }
 
 app.use(helmet());
@@ -58,25 +60,25 @@ const connectDB = async () => {
         }
 
         try {
-                await mongoose.connect(mongoUri);
-                console.log('MongoDB connected');
-                return true;
+            await mongoose.connect(mongoUri);
+            logger.info('MongoDB connected');
+            return true;
         } catch (err) {
-                console.error('DB Connection Error:', err);
-                return false;
+            logger.error({ err }, 'DB Connection Error');
+            return false;
         }
 }
 
 // Connect to DB first, then start the server. Exit if DB connection fails.
 connectDB().then((ok) => {
     if (!ok) {
-        console.error('Failed to connect to DB. Server will not start.');
+        logger.error('Failed to connect to DB. Server will not start.');
         process.exit(1);
     }
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
+            logger.info(`Server is running on port ${PORT}`);
     });
 }).catch((err) => {
     console.error('Unexpected error during startup:', err);

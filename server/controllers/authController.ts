@@ -20,7 +20,9 @@ const login = async (req: Request, res: Response) => {
 
         const jwtKey = process.env.JWT_KEY;
         if (!jwtKey) {
-            console.error('JWT_KEY is not set in environment');
+            // Use logger if available; require dynamically to avoid circular import errors
+            const { default: logger } = await import('../logger');
+            logger.error('JWT_KEY is not set in environment');
             return res.status(500).json({ success: false, error: 'Server misconfiguration' });
         }
 

@@ -24,7 +24,8 @@ const verifyUser = async (req: Request, res: Response, next: NextFunction) => {
 
     const jwtKey = process.env.JWT_KEY;
     if (!jwtKey) {
-      console.error('JWT_KEY is not set in environment');
+      const { default: logger } = await import('../logger');
+      logger.error('JWT_KEY is not set in environment');
       return res.status(500).json({ success: false, error: 'Server misconfiguration' });
     }
 
