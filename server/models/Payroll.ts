@@ -14,4 +14,8 @@ const payrollSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Indexes to improve query performance for common lookups
+payrollSchema.index({ employee: 1 });
+payrollSchema.index({ payDate: 1 });
+
 export default mongoose.model<IPayroll>('Payroll', payrollSchema);

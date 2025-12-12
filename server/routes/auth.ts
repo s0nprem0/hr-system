@@ -1,5 +1,5 @@
 import express from 'express';
-import { login, verify, register } from '../controllers/authController';
+import { login, verify, register, refresh, logout } from '../controllers/authController';
 import verifyUser from '../middleware/authMiddleware';
 import authorize from '../middleware/authorize';
 import loginRateLimiter from '../middleware/rateLimit';
@@ -31,6 +31,9 @@ router.post(
 	login,
 );
 router.get('/verify', verifyUser, verify);
+
+router.post('/refresh', validationHandler, refresh);
+router.post('/logout', validationHandler, logout);
 
 // Sample protected admin route (returns basic info if user is admin)
 router.get('/admin', verifyUser, authorize(['admin']), (req, res) => {

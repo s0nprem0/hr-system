@@ -19,8 +19,9 @@ const Login = () => {
       if (res.data?.success) {
         // server returns standardized payload: { success: true, data: { token, user } }
         const token = res.data?.data?.token;
+        const refreshToken = res.data?.data?.refreshToken;
         const user = res.data?.data?.user;
-        try { if (token) localStorage.setItem('token', token); } catch { /* ignore storage errors */ }
+        try { if (token) localStorage.setItem('token', token); if (refreshToken) localStorage.setItem('refreshToken', refreshToken); } catch { /* ignore storage errors */ }
         auth?.login(user, token);
         // Redirect to unified dashboard
         navigate('/dashboard');

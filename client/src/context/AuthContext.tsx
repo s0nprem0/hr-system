@@ -48,6 +48,7 @@ export function AuthContext({ children }: { children: ReactNode }) {
         const onUnauthorized = () => {
             try {
                 localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
             } catch {
                 // ignore
             }
@@ -76,6 +77,7 @@ export function AuthContext({ children }: { children: ReactNode }) {
         setUser(null);
         try {
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
         } catch {
             // ignore storage errors
         }

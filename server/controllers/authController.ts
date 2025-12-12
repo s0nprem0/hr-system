@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import logger from '../logger';
 import { sendSuccess, sendError } from '../utils/apiResponse';
+import RefreshToken from '../models/RefreshToken';
+import crypto from 'crypto';
 
 const login = async (req: Request, res: Response) => {
     try {
@@ -28,13 +30,26 @@ const login = async (req: Request, res: Response) => {
             return sendError(res, 'Server misconfiguration', 500);
         }
 
-        const token = jwt.sign(
+        const token = (jwt.sign as any)(
             { _id: user._id, role: user.role },
             jwtKey,
-            { expiresIn: "10d" }
+            { expiresIn: process.env.JWT_EXPIRES || '1h' }
         );
 
-        return sendSuccess(res, { token, user: { _id: user._id, name: user.name, role: user.role } }, 200);
+        // create a refresh token and persist it
+        const refreshTokenValue = crypto.randomBytes(48).toString('hex');
+        const refreshTtlSeconds = Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7); // default 7 days
+        const refresh = await RefreshToken.create({
+            token: refreshTokenValue,
+            user: user._id,
+            expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
+        });
+
+        return sendSuccess(
+            res,
+            { token, refreshToken: refresh.token, user: { _id: user._id, name: user.name, role: user.role } },
+            200,
+        );
 
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
@@ -66,4 +81,49 @@ const register = async (req: Request, res: Response) => {
     }
 }
 
-export { login, register, verify };
+// exported at bottom together with refresh/logout
+
+const refresh = async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) return sendError(res, 'Refresh token required', 400);
+
+        const found = await RefreshToken.findOne({ token: refreshToken });
+        if (!found || found.revoked) return sendError(res, 'Refresh token invalid', 401);
+        if (found.expiresAt < new Date()) return sendError(res, 'Refresh token expired', 401);
+
+        const user = await User.findById(found.user);
+        if (!user) return sendError(res, 'User not found', 404);
+
+        const jwtKey = process.env.JWT_KEY;
+        if (!jwtKey) return sendError(res, 'Server misconfiguration', 500);
+
+        const token = (jwt.sign as any)({ _id: user._id, role: user.role }, jwtKey, { expiresIn: process.env.JWT_EXPIRES || '1h' });
+
+        // Optionally rotate refresh token: here we keep same token but you could rotate.
+        return sendSuccess(res, { token }, 200);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error({ err }, 'refresh token error');
+        return sendError(res, message, 500);
+    }
+};
+
+const logout = async (req: Request, res: Response) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) return sendError(res, 'Refresh token required', 400);
+        const found = await RefreshToken.findOne({ token: refreshToken });
+        if (found) {
+            found.revoked = true;
+            await found.save();
+        }
+        return sendSuccess(res, { revoked: !!found }, 200);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error({ err }, 'logout error');
+        return sendError(res, message, 500);
+    }
+};
+
+export { login, register, verify, refresh, logout };
