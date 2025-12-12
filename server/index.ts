@@ -10,6 +10,16 @@ import errorHandler from './middleware/errorHandler';
 // Load environment variables from .env if present
 dotenv.config();
 
+// Startup environment validation (fail fast if critical secrets missing)
+const requiredEnvs = [
+    'JWT_KEY',
+];
+const missing = requiredEnvs.filter((k) => !process.env[k]);
+if (missing.length) {
+    console.error(`Missing required env vars: ${missing.join(', ')}. Set them in .env or the environment.`);
+    process.exit(1);
+}
+
 const app = express();
 
 // Middleware
