@@ -1,18 +1,72 @@
 import express from 'express';
+import { body, query, param } from 'express-validator';
 import verifyUser from '../middleware/authMiddleware';
 import authorize from '../middleware/authorize';
+import validationHandler from '../middleware/validationHandler';
+import {
+  listPayroll,
+  getPayroll,
+  createPayroll,
+  updatePayroll,
+  deletePayroll,
+} from '../controllers/payrollController';
 
 const router = express.Router();
 
 // List payroll entries - hr and admin
-router.get('/', verifyUser, authorize(['admin', 'hr']), async (req, res) => {
-  return res.json({ success: true, data: [], message: 'Payroll list (placeholder)' });
-});
+router.get(
+  '/',
+  verifyUser,
+  authorize(['admin', 'hr']),
+  query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
+  query('limit').optional().isInt({ min: 1 }).withMessage('limit must be a positive integer'),
+  validationHandler,
+  listPayroll
+);
 
 // Create payroll entry - hr only
-router.post('/', verifyUser, authorize(['hr']), async (req, res) => {
-  // TODO: create payroll entry
-  return res.status(201).json({ success: true, message: 'Payroll entry created (placeholder)' });
-});
+router.post(
+  '/',
+  verifyUser,
+  authorize(['hr']),
+  body('employeeId').isMongoId().withMessage('employeeId must be a valid id'),
+  body('amount').isFloat({ gt: 0 }).withMessage('amount must be a positive number'),
+  body('payDate').optional().isISO8601().withMessage('payDate must be a valid date'),
+  validationHandler,
+  createPayroll
+);
+
+// Get payroll entry
+router.get(
+  '/:id',
+  verifyUser,
+  authorize(['admin', 'hr']),
+  param('id').isMongoId().withMessage('Invalid payroll id'),
+  validationHandler,
+  getPayroll
+);
+
+// Update payroll entry
+router.put(
+  '/:id',
+  verifyUser,
+  authorize(['hr']),
+  param('id').isMongoId().withMessage('Invalid payroll id'),
+  body('employeeId').optional().isMongoId(),
+  body('amount').optional().isFloat({ gt: 0 }),
+  body('payDate').optional().isISO8601(),
+  validationHandler,
+  updatePayroll
+);
+
+// Delete payroll entry
+router.delete(
+  '/:id',
+  verifyUser,
+  authorize(['admin']),
+  param('id').isMongoId().withMessage('Invalid payroll id'),
+  validationHandler,
+  deletePayroll
+);
 
 export default router;
