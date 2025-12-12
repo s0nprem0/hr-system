@@ -1,6 +1,7 @@
 import express from 'express';
 import { login, verify, register } from '../controllers/authController';
 import verifyUser from '../middleware/authMiddleware';
+import authorize from '../middleware/authorize';
 import loginRateLimiter from '../middleware/rateLimit';
 import { body } from 'express-validator';
 
@@ -27,5 +28,10 @@ router.post(
 	login,
 );
 router.get('/verify', verifyUser, verify);
+
+// Sample protected admin route (returns basic info if user is admin)
+router.get('/admin', verifyUser, authorize(['admin']), (req, res) => {
+	return res.status(200).json({ success: true, message: 'Admin access granted', user: req.user });
+});
 
 export default router;
