@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
 import axios from 'axios';
 
@@ -18,6 +18,8 @@ const EmployeeForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess] = useState<string | null>(null);
+  const navTimeout = useRef<number | null>(null);
 
   const fetchDepartments = async () => {
     try {
@@ -81,11 +83,14 @@ const EmployeeForm = () => {
     try {
       if (isEdit && params.id) {
         await api.put(`/api/employees/${params.id}`, payload);
-        navigate(`/employees/${params.id}`);
+        setSuccess('Employee updated');
+        // give user a chance to see success message
+        navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900) as unknown as number;
       } else {
         const res = await api.post('/api/employees', { ...payload, password });
         const created = res.data?.data;
-        navigate(`/employees/${created?._id || ''}`);
+        setSuccess('Employee created');
+        navTimeout.current = window.setTimeout(() => navigate(`/employees/${created?._id || ''}`), 900) as unknown as number;
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -108,6 +113,15 @@ const EmployeeForm = () => {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (navTimeout.current) {
+        clearTimeout(navTimeout.current as unknown as number);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-3xl mx-auto">
@@ -115,6 +129,7 @@ const EmployeeForm = () => {
           <h1 className="text-2xl font-bold mb-2">{isEdit ? 'Edit' : 'Create'} Employee</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}
+          {success && <div className="text-success">{success}</div>}
 
           <div>
             <label className="block text-sm font-medium">Name</label>
