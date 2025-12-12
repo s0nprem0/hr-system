@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import morgan from 'morgan';
 import authRouter from './routes/auth';
 
 // Load environment variables from .env if present
@@ -10,7 +12,20 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+// Security and logging middlewares
+const clientUrl = process.env.CLIENT_URL;
+if (!clientUrl) {
+    console.warn('CLIENT_URL not set — CORS will default to allowing localhost:5173 for development.');
+}
+
+app.use(helmet());
+app.use(morgan('combined'));
+app.use(
+    cors({
+        origin: clientUrl ?? 'http://localhost:5173',
+    }),
+);
+
 app.use(express.json());
 
 // Routes
