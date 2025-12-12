@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PrivateRoutes from './utils/PrivateRoutes';
 import Navbar from './components/Navbar';
+import Unauthorized from './pages/Unauthorized';
 
 function App() {
   return (
@@ -25,7 +26,7 @@ function App() {
               }
             />
 
-            <Route path="/unauthorized" element={<div>Unauthorized</div>} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
           </Routes>
         </div>
       </main>

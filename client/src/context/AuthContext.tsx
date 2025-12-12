@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 
 // Define types
 interface User {
@@ -12,7 +12,7 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    login: (user: User) => void;
+    login: (user: User, token?: string) => void;
     logout: () => void;
     loading: boolean;
 }
@@ -28,19 +28,14 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
             try {
                 const token = localStorage.getItem('token');
                 if (token) {
-                    const response = await axios.get('http://localhost:5000/api/auth/verify', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    if (response.data.success) {
+                    const response = await api.get('/api/auth/verify');
+                    if (response.data?.success) {
                         setUser(response.data.user);
                     }
                 } else {
                     setUser(null);
                 }
             } catch (error) {
-                if (axios.isAxiosError(error)) {
-                     // Handle Axios specific error if needed
-                }
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -49,13 +44,20 @@ export const AuthContext = ({ children }: { children: ReactNode }) => {
         verifyUser();
     }, []);
 
-    const login = (user: User) => {
+    const login = (user: User, token?: string) => {
         setUser(user);
+        try {
+            if (token) {
+                localStorage.setItem('token', token);
+            }
+        } catch (e) {}
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('token');
+        try {
+            localStorage.removeItem('token');
+        } catch (e) {}
     };
 
     return (

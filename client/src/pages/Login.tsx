@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import api from '../utils/api';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,10 +15,11 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
-      if (res.data.success) {
-        localStorage.setItem('token', res.data.token);
-        auth?.login(res.data.user);
+      const res = await api.post('/api/auth/login', { email, password });
+      if (res.data?.success) {
+        const token = res.data.token;
+        try { localStorage.setItem('token', token); } catch (e) {}
+        auth?.login(res.data.user, token);
         // Redirect to unified dashboard
         navigate('/dashboard');
       } else {
@@ -25,7 +27,7 @@ const Login = () => {
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error || err.message || 'Login failed');
+        setError(err.response?.data?.error?.message || err.response?.data?.error || err.message || 'Login failed');
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
