@@ -5,6 +5,7 @@ import api from '../utils/api';
 import axios from 'axios';
 import handleApiError from '../utils/handleApiError';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 interface Employee {
   _id: string;
@@ -46,9 +47,11 @@ const EmployeesList = () => {
   }, [page, search]);
 
   const toast = useToast();
+  const confirm = useConfirm();
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this employee? This action cannot be undone.')) return;
+    const ok = await confirm('Delete this employee? This action cannot be undone.');
+    if (!ok) return;
     try {
       await api.delete(`/api/employees/${id}`);
       // refresh

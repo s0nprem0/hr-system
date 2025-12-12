@@ -4,6 +4,7 @@ import api from '../utils/api';
 import axios from 'axios';
 import handleApiError from '../utils/handleApiError';
 import { useToast } from '../context/ToastContext';
+import { useConfirm } from '../context/ConfirmContext';
 
 interface Employee {
   _id: string;
@@ -39,10 +40,12 @@ const EmployeeDetail = () => {
   useEffect(() => { fetchEmployee(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
 
   const toast = useToast();
+  const confirm = useConfirm();
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Delete this employee?')) return;
+    const ok = await confirm('Delete this employee?');
+    if (!ok) return;
     try {
       await api.delete(`/api/employees/${id}`);
       navigate('/employees');
