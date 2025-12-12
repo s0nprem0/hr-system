@@ -16,4 +16,8 @@ const refreshTokenSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Ensure expired refresh tokens are automatically removed by MongoDB
+// `expireAfterSeconds: 0` makes the document expire at the time in `expiresAt`.
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 export default mongoose.model<IRefreshToken>('RefreshToken', refreshTokenSchema);
