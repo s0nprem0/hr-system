@@ -98,10 +98,22 @@ const refresh = async (req: Request, res: Response) => {
         const jwtKey = process.env.JWT_KEY;
         if (!jwtKey) return sendError(res, 'Server misconfiguration', 500);
 
-        const token = (jwt.sign as any)({ _id: user._id, role: user.role }, jwtKey, { expiresIn: process.env.JWT_EXPIRES || '1h' });
+            const token = (jwt.sign as any)( { _id: user._id, role: user.role }, jwtKey, { expiresIn: process.env.JWT_EXPIRES || '1h' });
 
-        // Optionally rotate refresh token: here we keep same token but you could rotate.
-        return sendSuccess(res, { token }, 200);
+            // Rotate refresh token: revoke old one and issue a new refresh token
+            const newRefreshValue = crypto.randomBytes(48).toString('hex');
+            const refreshTtlSeconds = Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7);
+            // mark old token revoked
+            found.revoked = true;
+            await found.save();
+
+            const newRefresh = await RefreshToken.create({
+                token: newRefreshValue,
+                user: user._id,
+                expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
+            });
+
+            return sendSuccess(res, { token, refreshToken: newRefresh.token }, 200);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'refresh token error');

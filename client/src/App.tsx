@@ -10,6 +10,7 @@ import DepartmentForm from './pages/DepartmentForm';
 import Payroll from './pages/Payroll';
 import PayrollForm from './pages/PayrollForm';
 import Users from './pages/Users';
+import UserForm from './pages/UserForm';
 import Profile from './pages/Profile';
 import PrivateRoutes from './utils/PrivateRoutes';
 import Navbar from './components/Navbar';
@@ -129,6 +130,22 @@ function App() {
               element={
                 <PrivateRoutes requiredRole={["admin"]}>
                   <Users />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/users/new"
+              element={
+                <PrivateRoutes requiredRole={["admin"]}>
+                  <UserForm />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/users/:id/edit"
+              element={
+                <PrivateRoutes requiredRole={["admin"]}>
+                  <UserForm />
                 </PrivateRoutes>
               }
             />

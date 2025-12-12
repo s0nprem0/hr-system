@@ -50,9 +50,11 @@ async function refreshAuth(): Promise<string> {
   const resp = await axios.post(`${API_URL}/api/auth/refresh`, { refreshToken });
   if (!resp.data?.success) throw new Error('Refresh failed');
   const newToken = resp.data?.data?.token;
+  const newRefresh = resp.data?.data?.refreshToken;
   if (!newToken) throw new Error('No token in refresh response');
   try {
     localStorage.setItem('token', newToken);
+    if (newRefresh) localStorage.setItem('refreshToken', newRefresh);
   } catch {
     // ignore
   }
