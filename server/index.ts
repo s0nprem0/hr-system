@@ -5,6 +5,10 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import authRouter from './routes/auth';
+import usersRouter from './routes/users';
+import employeesRouter from './routes/employees';
+import departmentsRouter from './routes/departments';
+import payrollRouter from './routes/payroll';
 import errorHandler from './middleware/errorHandler';
 import logger from './logger';
 
@@ -43,6 +47,10 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/employees', employeesRouter);
+app.use('/api/departments', departmentsRouter);
+app.use('/api/payroll', payrollRouter);
 
 // Health endpoint
 app.get('/health', (req, res) => {
