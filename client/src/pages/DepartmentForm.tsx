@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
@@ -13,6 +13,9 @@ const DepartmentForm = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const nameRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const toast = useToast();
@@ -43,8 +46,14 @@ const DepartmentForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!name || !name.trim()) return setError('Name is required');
-    setLoading(true);
+    const errs: Record<string, string> = {};
+    if (!name || !name.trim()) errs.name = 'Name is required';
+    if (Object.keys(errs).length) {
+      setFormErrors(errs);
+      if (errs.name) nameRef.current?.focus();
+      return;
+    }
+    setSaving(true);
     try {
       if (isEdit && params.id) {
         await api.put(`/api/departments/${params.id}`, { name, description });
@@ -59,7 +68,7 @@ const DepartmentForm = () => {
       const apiErr = handleApiError(err);
       setError(apiErr.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -73,7 +82,8 @@ const DepartmentForm = () => {
 
           <div>
             <label className="block text-sm font-medium">Name</label>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <input ref={nameRef} aria-invalid={!!formErrors.name} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
+            {formErrors.name && <div className="text-sm text-danger mt-1">{formErrors.name}</div>}
           </div>
 
           <div>
@@ -82,8 +92,8 @@ const DepartmentForm = () => {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={loading}>Cancel</button>
-            <button type="submit" className="btn" disabled={loading}>{loading ? 'Saving…' : 'Save'}</button>
+            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
+            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>

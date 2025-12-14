@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
@@ -22,6 +22,9 @@ const PayrollForm = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const employeeRef = useRef<HTMLSelectElement | null>(null);
+  const amountRef = useRef<HTMLInputElement | null>(null);
 
   const toast = useToast();
 
@@ -62,8 +65,17 @@ const PayrollForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!employeeId) return setError('Employee is required');
-    if (!amount || Number.isNaN(Number(amount))) return setError('Valid amount is required');
+    setFormErrors({});
+    const errs: Record<string, string> = {};
+    if (!employeeId) errs.employeeId = 'Employee is required';
+    if (!amount || Number.isNaN(Number(amount))) errs.amount = 'Valid amount is required';
+    if (Object.keys(errs).length) {
+      setFormErrors(errs);
+      const first = Object.keys(errs)[0];
+      if (first === 'employeeId') employeeRef.current?.focus();
+      if (first === 'amount') amountRef.current?.focus();
+      return;
+    }
     setSaving(true);
     try {
       const payload: { employeeId: string; amount: number; payDate?: string } = {
@@ -81,7 +93,17 @@ const PayrollForm = () => {
       navigate('/payroll');
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
-      setError(apiErr.message);
+      if (apiErr.details && Array.isArray(apiErr.details)) {
+        const fe: Record<string, string> = {};
+        for (const d of apiErr.details) if (d.param && d.msg) fe[d.param] = d.msg;
+        setFormErrors(fe);
+        const first = Object.keys(fe)[0];
+        if (first === 'employeeId') employeeRef.current?.focus();
+        if (first === 'amount') amountRef.current?.focus();
+        setError(apiErr.message || 'Validation failed');
+      } else {
+        setError(apiErr.message);
+      }
     } finally {
       setSaving(false);
     }
@@ -97,17 +119,19 @@ const PayrollForm = () => {
 
           <div>
             <label className="block text-sm font-medium">Employee</label>
-            <select className="input" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
+            <select ref={employeeRef} aria-invalid={!!formErrors.employeeId} aria-describedby={formErrors.employeeId ? 'employee-error' : undefined} className="input" value={employeeId} onChange={(e) => { setEmployeeId(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.employeeId; return c; }); }}>
               <option value="">-- Select employee --</option>
               {employees.map((emp) => (
                 <option key={emp._id} value={emp._id}>{emp.name || emp.email}</option>
               ))}
             </select>
+            {formErrors.employeeId && <div id="employee-error" className="text-sm text-danger mt-1">{formErrors.employeeId}</div>}
           </div>
 
           <div>
             <label className="block text-sm font-medium">Amount</label>
-            <input className="input" value={amount} onChange={(e) => setAmount(e.target.value)} type="number" step="0.01" />
+            <input ref={amountRef} aria-invalid={!!formErrors.amount} aria-describedby={formErrors.amount ? 'amount-error' : undefined} className="input" value={amount} onChange={(e) => { setAmount(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.amount; return c; }); }} type="number" step="0.01" />
+            {formErrors.amount && <div id="amount-error" className="text-sm text-danger mt-1">{formErrors.amount}</div>}
           </div>
 
           <div>

@@ -18,10 +18,14 @@ const EmployeeForm = () => {
 
   const [departments, setDepartments] = useState<Array<{ _id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
   const navTimeout = useRef<number | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
   const toast = useToast();
 
   const fetchDepartments = async () => {
@@ -80,13 +84,17 @@ const EmployeeForm = () => {
 
     if (Object.keys(errs).length) {
       setFormErrors(errs);
+      const first = Object.keys(errs)[0];
+      if (first === 'name') nameRef.current?.focus();
+      if (first === 'email') emailRef.current?.focus();
+      if (first === 'password') passwordRef.current?.focus();
       return;
     }
     const payload: Record<string, unknown> = { name, email, role, profile: { department: departmentId } };
     if (!isEdit && password) payload.password = password;
     if (isEdit && password) payload.password = password; // allow changing password
 
-    setLoading(true);
+    setSaving(true);
     try {
       if (isEdit && params.id) {
         await api.put(`/api/employees/${params.id}`, payload);
@@ -109,12 +117,16 @@ const EmployeeForm = () => {
           if (d.param && d.msg) fieldErrors[d.param] = d.msg;
         }
         setFormErrors(fieldErrors);
+        const first = Object.keys(fieldErrors)[0];
+        if (first === 'name') nameRef.current?.focus();
+        if (first === 'email') emailRef.current?.focus();
+        if (first === 'password') passwordRef.current?.focus();
         setError(apiErr.message || 'Validation failed');
       } else {
         setError(apiErr.message);
       }
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -138,19 +150,19 @@ const EmployeeForm = () => {
 
           <div>
             <label className="block text-sm font-medium">Name</label>
-            <input aria-invalid={!!formErrors.name} className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <input ref={nameRef} aria-invalid={!!formErrors.name} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
             {formErrors.name && <div className="text-sm text-danger mt-1">{formErrors.name}</div>}
           </div>
 
           <div>
             <label className="block text-sm font-medium">Email</label>
-            <input aria-invalid={!!formErrors.email} className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input ref={emailRef} aria-invalid={!!formErrors.email} className="input" value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} />
             {formErrors.email && <div className="text-sm text-danger mt-1">{formErrors.email}</div>}
           </div>
 
           <div>
             <label className="block text-sm font-medium">Password {isEdit ? '(leave blank to keep)' : ''}</label>
-            <input aria-invalid={!!formErrors.password} type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input ref={passwordRef} aria-invalid={!!formErrors.password} type="password" className="input" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} />
             {formErrors.password && <div className="text-sm text-danger mt-1">{formErrors.password}</div>}
           </div>
 
@@ -174,8 +186,8 @@ const EmployeeForm = () => {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={loading}>Cancel</button>
-            <button type="submit" className="btn" disabled={loading}>{loading ? 'Saving…' : 'Save'}</button>
+            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
+            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>

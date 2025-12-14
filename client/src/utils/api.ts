@@ -46,12 +46,15 @@ function onRefreshed(token: string) {
 
 async function refreshAuth(): Promise<string> {
   const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) throw new Error('No refresh token');
+  if (!refreshToken) return Promise.reject({ response: { data: { error: { message: 'No refresh token' } } }, status: 401 });
   const resp = await axios.post(`${API_URL}/api/auth/refresh`, { refreshToken });
-  if (!resp.data?.success) throw new Error('Refresh failed');
+  if (!resp.data?.success) {
+    const remoteErr = resp.data?.error;
+    return Promise.reject({ response: { data: { error: { message: remoteErr?.message || 'Refresh failed', details: remoteErr?.details } } }, status: resp.status ?? 401 });
+  }
   const newToken = resp.data?.data?.token;
   const newRefresh = resp.data?.data?.refreshToken;
-  if (!newToken) throw new Error('No token in refresh response');
+  if (!newToken) return Promise.reject({ response: { data: { error: { message: 'No token in refresh response' } } }, status: 500 });
   try {
     localStorage.setItem('token', newToken);
     if (newRefresh) localStorage.setItem('refreshToken', newRefresh);

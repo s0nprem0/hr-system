@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
@@ -9,6 +10,7 @@ type Role = 'admin' | 'hr' | 'employee';
 type User = { _id: string; name?: string; email: string; role?: Role };
 
 const UserForm = () => {
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const params = useParams();
   const isEdit = !!params.id;
@@ -20,6 +22,9 @@ const UserForm = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
 
   const toast = useToast();
 
@@ -53,8 +58,9 @@ const UserForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!name.trim()) return setError('Name is required');
-    if (!email.trim()) return setError('Email is required');
+    const errs: Record<string, string> = {};
+    if (!name.trim()) errs.name = 'Name is required';
+    if (!email.trim()) errs.email = 'Email is required';
     setSaving(true);
     try {
       const payload: { name: string; email: string; role: Role; password?: string } = { name, email, role };
@@ -87,12 +93,14 @@ const UserForm = () => {
 
           <div>
             <label className="block text-sm font-medium">Name</label>
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <input ref={nameRef} aria-invalid={!!formErrors.name} aria-describedby={formErrors.name ? 'name-error' : undefined} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
+            {formErrors.name && <div id="name-error" className="text-sm text-danger mt-1">{formErrors.name}</div>}
           </div>
 
           <div>
             <label className="block text-sm font-medium">Email</label>
-            <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+            <input ref={emailRef} aria-invalid={!!formErrors.email} aria-describedby={formErrors.email ? 'email-error' : undefined} className="input" value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} type="email" />
+            {formErrors.email && <div id="email-error" className="text-sm text-danger mt-1">{formErrors.email}</div>}
           </div>
 
           <div>
@@ -107,7 +115,8 @@ const UserForm = () => {
           {!isEdit && (
             <div>
               <label className="block text-sm font-medium">Password</label>
-              <input className="input" value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
+              <input ref={passwordRef} aria-invalid={!!formErrors.password} aria-describedby={formErrors.password ? 'password-error' : undefined} className="input" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} type="password" />
+              {formErrors.password && <div id="password-error" className="text-sm text-danger mt-1">{formErrors.password}</div>}
             </div>
           )}
 
