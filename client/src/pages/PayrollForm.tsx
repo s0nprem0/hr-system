@@ -36,6 +36,11 @@ const PayrollForm = () => {
 
   const fetchPayroll = useCallback(async () => {
     if (!params.id) return;
+    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(params.id);
+    if (!isValidHex24) {
+      setError('Invalid payroll id');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.get(`/api/payroll/${params.id}`);
@@ -45,7 +50,8 @@ const PayrollForm = () => {
       setPayDate(p?.payDate ? new Date(p.payDate).toISOString().slice(0, 10) : '');
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
-      setError(apiErr.message);
+      if (/not found/i.test(apiErr.message)) setError('Payroll entry not found');
+      else setError(apiErr.message);
     } finally {
       setLoading(false);
     }

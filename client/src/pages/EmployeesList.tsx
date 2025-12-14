@@ -50,7 +50,7 @@ const EmployeesList = () => {
     {
       key: 'department',
       header: 'Department',
-      render: (employee) => (employee.profile as any)?.department?.name ?? '-',
+      render: (employee) => employee.profile?.department?.name ?? '-',
     },
   ];
 

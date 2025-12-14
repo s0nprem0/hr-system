@@ -24,6 +24,12 @@ const UserForm = () => {
 
   useEffect(() => {
     if (!isEdit || !params.id) return;
+    // simple client-side validation to avoid requesting invalid ids (which return 404)
+    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(params.id);
+    if (!isValidHex24) {
+      setError('Invalid user id');
+      return;
+    }
     const load = async () => {
       setLoading(true);
       try {
@@ -34,7 +40,9 @@ const UserForm = () => {
         setRole((u?.role) || 'employee');
       } catch (err: unknown) {
         const apiErr = handleApiError(err);
-        setError(apiErr.message);
+        // user not found -> show friendly message
+        if (/not found/i.test(apiErr.message)) setError('User not found');
+        else setError(apiErr.message);
       } finally {
         setLoading(false);
       }

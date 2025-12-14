@@ -34,6 +34,11 @@ const EmployeeForm = () => {
 
   const fetchEmployee = async () => {
     if (!params.id) return;
+    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(params.id);
+    if (!isValidHex24) {
+      setError('Invalid employee id');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.get(`/api/employees/${params.id}`);
@@ -44,7 +49,8 @@ const EmployeeForm = () => {
       setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
-      setError(apiErr.message);
+      if (/not found/i.test(apiErr.message)) setError('Employee not found');
+      else setError(apiErr.message);
     } finally {
       setLoading(false);
     }

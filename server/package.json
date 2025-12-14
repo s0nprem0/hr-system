@@ -16,7 +16,8 @@
     "@types/jest": "^29.5.3",
     "@types/supertest": "^2.0.12",
     "supertest": "^6.3.3",
-    "tsx": "^3.12.7"
+    "tsx": "^3.12.7",
+    "mongodb-memory-server": "^8.12.2"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

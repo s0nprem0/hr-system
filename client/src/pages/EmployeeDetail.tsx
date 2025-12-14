@@ -24,6 +24,11 @@ const EmployeeDetail = () => {
 
   const fetchEmployee = async () => {
     if (!id) return;
+    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(id);
+    if (!isValidHex24) {
+      setError('Invalid employee id');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -31,7 +36,8 @@ const EmployeeDetail = () => {
       setEmployee(res.data?.data || null);
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
-      setError(apiErr.message);
+      if (/not found/i.test(apiErr.message)) setError('Employee not found');
+      else setError(apiErr.message);
     } finally {
       setLoading(false);
     }
@@ -44,6 +50,11 @@ const EmployeeDetail = () => {
 
   const handleDelete = async () => {
     if (!id) return;
+    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(id);
+    if (!isValidHex24) {
+      toast.showToast('Invalid employee id', 'error');
+      return;
+    }
     const ok = await confirm('Delete this employee?');
     if (!ok) return;
     try {

@@ -18,6 +18,11 @@ const DepartmentForm = () => {
 
   const fetchDepartment = async () => {
     if (!params.id) return;
+    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(params.id);
+    if (!isValidHex24) {
+      setError('Invalid department id');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.get(`/api/departments/${params.id}`);
@@ -26,7 +31,8 @@ const DepartmentForm = () => {
       setDescription(d?.description || '');
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
-      setError(apiErr.message);
+      if (/not found/i.test(apiErr.message)) setError('Department not found');
+      else setError(apiErr.message);
     } finally {
       setLoading(false);
     }
