@@ -64,6 +64,19 @@ router.delete(
   },
 );
 
+// Get single user - admin and hr can view
+router.get('/:id', verifyUser, authorize(['admin', 'hr']), [param('id').isMongoId().withMessage('Invalid id')], validationHandler, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).select('-password').lean();
+    if (!user) return sendError(res, 'User not found', 404);
+    return sendSuccess(res, user);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return sendError(res, msg, 500);
+  }
+});
+
 // Create user (admin)
 router.post(
   '/',
