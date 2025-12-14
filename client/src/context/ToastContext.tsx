@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 type ToastType = 'info' | 'success' | 'error' | 'warning';
@@ -18,6 +19,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const value = useMemo(() => ({ showToast }), [showToast]);
+
+  // Listen for global auth unauthorized events and show a toast
+  React.useEffect(() => {
+    const onUnauthorized = () => {
+      showToast('Session expired. Please log in.', 'warning');
+    };
+    window.addEventListener('auth:unauthorized', onUnauthorized as EventListener);
+    return () => {
+      window.removeEventListener('auth:unauthorized', onUnauthorized as EventListener);
+    };
+  }, [showToast]);
 
   return (
     <ToastContext.Provider value={value}>

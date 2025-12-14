@@ -5,6 +5,10 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
+import Select from '../components/ui/Select';
+import Checkbox from '../components/ui/Checkbox';
 
 type Role = 'admin' | 'hr' | 'employee';
 type User = { _id: string; name?: string; email: string; role?: Role };
@@ -19,6 +23,7 @@ const UserForm = () => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin' | 'hr' | 'employee'>('employee');
   const [password, setPassword] = useState('');
+  const [active, setActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +68,8 @@ const UserForm = () => {
     if (!email.trim()) errs.email = 'Email is required';
     setSaving(true);
     try {
-      const payload: { name: string; email: string; role: Role; password?: string } = { name, email, role };
+      const payload: { name: string; email: string; role: Role; password?: string; active?: boolean } = { name, email, role };
+      payload.active = active;
       if (!isEdit && password) payload.password = password;
       if (isEdit && params.id) {
         await api.put(`/api/users/${params.id}`, payload);
@@ -92,37 +98,35 @@ const UserForm = () => {
           {error && <div className="text-danger">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input ref={nameRef} aria-invalid={!!formErrors.name} aria-describedby={formErrors.name ? 'name-error' : undefined} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
-            {formErrors.name && <div id="name-error" className="text-sm text-danger mt-1">{formErrors.name}</div>}
+            <Input ref={nameRef} label="Name" aria-invalid={!!formErrors.name} aria-describedby={formErrors.name ? 'name-error' : undefined} value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input ref={emailRef} aria-invalid={!!formErrors.email} aria-describedby={formErrors.email ? 'email-error' : undefined} className="input" value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} type="email" />
-            {formErrors.email && <div id="email-error" className="text-sm text-danger mt-1">{formErrors.email}</div>}
+            <Input ref={emailRef} label="Email" aria-invalid={!!formErrors.email} aria-describedby={formErrors.email ? 'email-error' : undefined} value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} type="email" />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium">Role</label>
-            <select className="input" value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="employee">Employee</option>
-              <option value="hr">HR</option>
-              <option value="admin">Admin</option>
-            </select>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Select label="Role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as Role)}>
+                <option value="employee">Employee</option>
+                <option value="hr">HR</option>
+                <option value="admin">Admin</option>
+              </Select>
+            </div>
+            <div>
+              <Checkbox label="Active" checked={active} onChange={(e) => setActive(e.target.checked)} />
+            </div>
           </div>
 
           {!isEdit && (
             <div>
-              <label className="block text-sm font-medium">Password</label>
-              <input ref={passwordRef} aria-invalid={!!formErrors.password} aria-describedby={formErrors.password ? 'password-error' : undefined} className="input" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} type="password" />
-              {formErrors.password && <div id="password-error" className="text-sm text-danger mt-1">{formErrors.password}</div>}
+              <Input ref={passwordRef} label="Password" aria-invalid={!!formErrors.password} aria-describedby={formErrors.password ? 'password-error' : undefined} value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} type="password" />
             </div>
           )}
 
           <div className="flex gap-2 justify-end">
-            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
-            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+            <Button type="button" className="" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
       </div>

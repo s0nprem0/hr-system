@@ -9,6 +9,7 @@ type User = {
   name?: string;
   email: string;
   role?: string;
+  active?: boolean;
 };
 
 const Users = () => {
@@ -44,6 +45,12 @@ const Users = () => {
       key: 'role',
       header: 'Role',
       render: (user) => user.role || 'user',
+    },
+    {
+      key: 'active',
+      header: 'Active',
+      render: (user) => (user.active ? <span className="text-success">Active</span> : <span className="muted">Inactive</span>),
+      className: 'w-24',
     },
   ];
 

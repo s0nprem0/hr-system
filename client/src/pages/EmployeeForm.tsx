@@ -4,6 +4,11 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import Label from '../components/ui/Label';
+import Button from '../components/ui/Button';
+import Checkbox from '../components/ui/Checkbox';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
@@ -15,6 +20,7 @@ const EmployeeForm = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'admin' | 'hr' | 'employee'>('employee');
   const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
+  const [active, setActive] = useState(true);
 
   const [departments, setDepartments] = useState<Array<{ _id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -35,6 +41,18 @@ const EmployeeForm = () => {
     } catch {
       // ignore
     }
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Select label="Role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
+                <option value="employee">Employee</option>
+                <option value="hr">HR</option>
+                <option value="admin">Admin</option>
+              </Select>
+            </div>
+            <div>
+              <Checkbox label="Active" checked={active} onChange={(e) => setActive(e.target.checked)} />
+            </div>
+          </div>
   };
 
   const fetchEmployee = async () => {
@@ -98,12 +116,14 @@ const EmployeeForm = () => {
     try {
       if (isEdit && params.id) {
         await api.put(`/api/employees/${params.id}`, payload);
+        (payload as any).active = active;
+        (payload as any).active = active;
         setSuccess('Employee updated');
         toast.showToast('Employee updated', 'success');
         // give user a chance to see success message
         navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900) as unknown as number;
       } else {
-        const res = await api.post('/api/employees', { ...payload, password });
+        const res = await api.post('/api/employees', { ...payload, password, active });
         const created = res.data?.data;
         setSuccess('Employee created');
         toast.showToast('Employee created', 'success');
@@ -149,34 +169,27 @@ const EmployeeForm = () => {
           {success && <div className="text-success">{success}</div>}
 
           <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input ref={nameRef} aria-invalid={!!formErrors.name} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
-            {formErrors.name && <div className="text-sm text-danger mt-1">{formErrors.name}</div>}
+            <Input ref={nameRef} label="Name" aria-invalid={!!formErrors.name} value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input ref={emailRef} aria-invalid={!!formErrors.email} className="input" value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} />
-            {formErrors.email && <div className="text-sm text-danger mt-1">{formErrors.email}</div>}
+            <Input ref={emailRef} label="Email" aria-invalid={!!formErrors.email} value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Password {isEdit ? '(leave blank to keep)' : ''}</label>
-            <input ref={passwordRef} aria-invalid={!!formErrors.password} type="password" className="input" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} />
-            {formErrors.password && <div className="text-sm text-danger mt-1">{formErrors.password}</div>}
+            <Input ref={passwordRef} label={`Password ${isEdit ? '(leave blank to keep)' : ''}`} aria-invalid={!!formErrors.password} type="password" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Role</label>
-            <select className="input" value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
+            <Select label="Role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
               <option value="employee">Employee</option>
               <option value="hr">HR</option>
               <option value="admin">Admin</option>
-            </select>
+            </Select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Department</label>
+            <Label>Department</Label>
             <select className="input" value={departmentId || ''} onChange={(e) => setDepartmentId(e.target.value || undefined)}>
               <option value="">-- none --</option>
               {departments.map((d) => (
@@ -186,8 +199,8 @@ const EmployeeForm = () => {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
-            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+            <Button type="button" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
       </div>

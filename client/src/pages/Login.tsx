@@ -3,6 +3,8 @@ import api from '../utils/api';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -45,16 +47,14 @@ const Login = () => {
         <h2 className="text-2xl font-semibold mb-4">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-(--cp-text)">Email</label>
-            <input id="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 block w-full px-3 py-2 border rounded-md bg-surface text-(--cp-text) placeholder:text-(--cp-muted) border-border" />
+            <Input id="email" label="Email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-(--cp-text)">Password</label>
-            <input id="password" type="password" placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border rounded-md bg-surface text-(--cp-text) placeholder:text-(--cp-muted) border-border" />
+            <Input id="password" label="Password" type="password" placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {error && <div className="text-sm text-danger">{error}</div>}
           <div className="flex justify-end">
-            <button type="submit" className="btn">Login</button>
+            <Button type="submit" variant="primary">Login</Button>
           </div>
         </form>
       </div>
