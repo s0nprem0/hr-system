@@ -22,24 +22,25 @@ const UserForm = () => {
 
   const toast = useToast();
 
-  const fetchUser = async () => {
-    if (!params.id) return;
-    setLoading(true);
-    try {
-      const res = await api.get(`/api/users/${params.id}`);
-      const u: User = res.data?.data;
-      setName(u?.name || '');
-      setEmail(u?.email || '');
-      setRole((u?.role) || 'employee');
-    } catch (err: unknown) {
-      const apiErr = handleApiError(err);
-      setError(apiErr.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { if (isEdit) fetchUser(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [params.id]);
+  useEffect(() => {
+    if (!isEdit || !params.id) return;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/api/users/${params.id}`);
+        const u: User = res.data?.data;
+        setName(u?.name || '');
+        setEmail(u?.email || '');
+        setRole((u?.role) || 'employee');
+      } catch (err: unknown) {
+        const apiErr = handleApiError(err);
+        setError(apiErr.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [isEdit, params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +89,7 @@ const UserForm = () => {
 
           <div>
             <label className="block text-sm font-medium">Role</label>
-            <select className="input" value={role} onChange={(e) => setRole(e.target.value as any)}>
+            <select className="input" value={role} onChange={(e) => setRole(e.target.value as Role)}>
               <option value="employee">Employee</option>
               <option value="hr">HR</option>
               <option value="admin">Admin</option>
