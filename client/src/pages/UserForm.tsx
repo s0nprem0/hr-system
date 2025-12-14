@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react';
-import { useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
 import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import Checkbox from '../components/ui/Checkbox';
+import Button from '../components/ui/Button';
 
 type Role = 'admin' | 'hr' | 'employee';
-type User = { _id: string; name?: string; email: string; role?: Role };
+type User = { _id: string; name?: string; email: string; role?: Role; active?: boolean };
 
 const UserForm = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -21,7 +20,7 @@ const UserForm = () => {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'hr' | 'employee'>('employee');
+  const [role, setRole] = useState<Role>('employee');
   const [password, setPassword] = useState('');
   const [active, setActive] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -35,7 +34,6 @@ const UserForm = () => {
 
   useEffect(() => {
     if (!isEdit || !params.id) return;
-    // simple client-side validation to avoid requesting invalid ids (which return 404)
     if (!isValidMongoId(params.id)) {
       setError('Invalid user id');
       return;
@@ -47,10 +45,10 @@ const UserForm = () => {
         const u: User = res.data?.data;
         setName(u?.name || '');
         setEmail(u?.email || '');
-        setRole((u?.role) || 'employee');
+        setRole(u?.role || 'employee');
+        setActive(u?.active ?? true);
       } catch (err: unknown) {
         const apiErr = handleApiError(err);
-        // user not found -> show friendly message
         if (/not found/i.test(apiErr.message)) setError('User not found');
         else setError(apiErr.message);
       } finally {
@@ -66,6 +64,13 @@ const UserForm = () => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = 'Name is required';
     if (!email.trim()) errs.email = 'Email is required';
+    if (Object.keys(errs).length) {
+      setFormErrors(errs);
+      const first = Object.keys(errs)[0];
+      if (first === 'name') nameRef.current?.focus();
+      if (first === 'email') emailRef.current?.focus();
+      return;
+    }
     setSaving(true);
     try {
       const payload: { name: string; email: string; role: Role; password?: string; active?: boolean } = { name, email, role };
@@ -75,7 +80,6 @@ const UserForm = () => {
         await api.put(`/api/users/${params.id}`, payload);
         toast.showToast('User updated', 'success');
       } else {
-        // create via employees endpoint
         if (!password) return setError('Password is required for new user');
         await api.post('/api/users', { ...payload, password });
         toast.showToast('User created', 'success');
@@ -125,8 +129,8 @@ const UserForm = () => {
           )}
 
           <div className="flex gap-2 justify-end">
-            <Button type="button" className="" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+            <Button type="button" variant="ghost" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
+            <Button type="submit" variant="primary" loading={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
       </div>

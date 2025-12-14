@@ -7,7 +7,6 @@ import { useToast } from '../context/ToastContext';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Label from '../components/ui/Label';
-import Button from '../components/ui/Button';
 import Checkbox from '../components/ui/Checkbox';
 
 const EmployeeForm = () => {
@@ -41,18 +40,6 @@ const EmployeeForm = () => {
     } catch {
       // ignore
     }
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Select label="Role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
-                <option value="employee">Employee</option>
-                <option value="hr">HR</option>
-                <option value="admin">Admin</option>
-              </Select>
-            </div>
-            <div>
-              <Checkbox label="Active" checked={active} onChange={(e) => setActive(e.target.checked)} />
-            </div>
-          </div>
   };
 
   const fetchEmployee = async () => {
@@ -115,9 +102,8 @@ const EmployeeForm = () => {
     setSaving(true);
     try {
       if (isEdit && params.id) {
+        (payload as Record<string, unknown>).active = active;
         await api.put(`/api/employees/${params.id}`, payload);
-        (payload as any).active = active;
-        (payload as any).active = active;
         setSuccess('Employee updated');
         toast.showToast('Employee updated', 'success');
         // give user a chance to see success message
@@ -198,9 +184,13 @@ const EmployeeForm = () => {
             </select>
           </div>
 
+          <div className="flex items-center gap-4">
+            <Checkbox label="Active" checked={active} onChange={(e) => setActive(e.target.checked)} />
+          </div>
+
           <div className="flex gap-2 justify-end">
-            <Button type="button" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
+            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
         </form>
       </div>

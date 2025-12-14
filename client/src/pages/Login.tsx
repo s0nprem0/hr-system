@@ -10,6 +10,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const auth = useAuth();
 
@@ -17,6 +18,7 @@ const Login = () => {
     e.preventDefault();
     setError(null);
     try {
+      setLoading(true);
       const res = await api.post('/api/auth/login', { email, password });
       if (res.data?.success) {
         // server returns standardized payload: { success: true, data: { token, user } }
@@ -38,6 +40,8 @@ const Login = () => {
       } else {
         setError('Login failed');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,7 +58,7 @@ const Login = () => {
           </div>
           {error && <div className="text-sm text-danger">{error}</div>}
           <div className="flex justify-end">
-            <Button type="submit" variant="primary">Login</Button>
+            <Button type="submit" variant="primary" loading={loading}>Login</Button>
           </div>
         </form>
       </div>

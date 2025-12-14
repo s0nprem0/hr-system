@@ -22,5 +22,13 @@ module.exports = {
       },
     },
   },
+  safelist: [
+    // ensure bracketed var classes and placeholder variants are preserved
+    { pattern: /^text-\[var\(--cp-[\w-]+\)\]$/ },
+    { pattern: /^placeholder:text-\[var\(--cp-[\w-]+\)\]$/ },
+    // preserve background/border var classes used by components
+    { pattern: /^bg-\[var\(--cp-[\w-]+\)\]$/ },
+    { pattern: /^border-\[var\(--cp-[\w-]+\)\]$/ },
+  ],
   plugins: [],
 }

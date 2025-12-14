@@ -93,7 +93,7 @@ const DepartmentForm = () => {
 
           <div className="flex gap-2 justify-end">
             <Button type="button" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+            <Button type="submit" variant="primary" loading={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
       </div>
