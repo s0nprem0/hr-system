@@ -124,13 +124,15 @@ router.put(
     try {
       const { id } = req.params;
       const updates: Partial<Record<string, unknown>> = { ...req.body };
-      if (updates.password) {
+      // Use a typed copy so we can safely check and hash the password
+      const safeUpdates = { ...updates } as Record<string, any>;
+      if (typeof safeUpdates.password === 'string' && safeUpdates.password.length > 0) {
         const bcrypt = await import('bcryptjs');
-        updates.password = await bcrypt.hash(updates.password, 10);
+        safeUpdates.password = await bcrypt.hash(safeUpdates.password, 10);
       }
 
       const before = await User.findById(id).lean();
-      const updated = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
+      const updated = await User.findByIdAndUpdate(id, safeUpdates, { new: true }).select('-password');
       if (!updated) return sendError(res, 'User not found', 404);
 
       try {
