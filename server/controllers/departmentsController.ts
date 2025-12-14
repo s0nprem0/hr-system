@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
-import Department from '../models/Department';
+import type { FilterQuery } from 'mongoose';
+import Department, { IDepartment } from '../models/Department';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import logger from '../logger';
 
@@ -9,7 +10,7 @@ export const listDepartments = async (req: Request, res: Response) => {
     const limit = Math.min(Number(req.query.limit) || 25, 100);
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
 
-    const filter: any = {};
+    const filter: FilterQuery<IDepartment> = {};
     if (search) {
       filter.name = { $regex: search, $options: 'i' };
     }

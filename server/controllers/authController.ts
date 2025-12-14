@@ -2,7 +2,8 @@ import type { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+import type { Secret } from 'jsonwebtoken';
 import logger from '../logger';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import RefreshToken from '../models/RefreshToken';
@@ -30,11 +31,8 @@ const login = async (req: Request, res: Response) => {
             return sendError(res, 'Server misconfiguration', 500);
         }
 
-        const token = (jwt.sign as any)(
-            { _id: user._id, role: user.role },
-            jwtKey,
-            { expiresIn: process.env.JWT_EXPIRES || '1h' }
-        );
+        const signFn = jwt.sign as unknown as (payload: unknown, secret: Secret, options?: unknown) => string;
+        const token = signFn({ _id: user._id, role: user.role }, jwtKey as Secret, { expiresIn: process.env.JWT_EXPIRES || '1h' });
 
         // create a refresh token and persist it
         const refreshTokenValue = crypto.randomBytes(48).toString('hex');
@@ -98,7 +96,8 @@ const refresh = async (req: Request, res: Response) => {
         const jwtKey = process.env.JWT_KEY;
         if (!jwtKey) return sendError(res, 'Server misconfiguration', 500);
 
-            const token = (jwt.sign as any)( { _id: user._id, role: user.role }, jwtKey, { expiresIn: process.env.JWT_EXPIRES || '1h' });
+            const signFn = jwt.sign as unknown as (payload: unknown, secret: Secret, options?: unknown) => string;
+            const token = signFn({ _id: user._id, role: user.role }, jwtKey as Secret, { expiresIn: process.env.JWT_EXPIRES || '1h' });
 
             // Rotate refresh token: revoke old one and issue a new refresh token
             const newRefreshValue = crypto.randomBytes(48).toString('hex');

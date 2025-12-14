@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import User from '../models/User';
+import type { FilterQuery, UpdateQuery } from 'mongoose';
+import User, { IUser } from '../models/User';
 import logger from '../logger';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import mongoose from 'mongoose';
@@ -13,7 +14,7 @@ const listEmployees = async (req: Request, res: Response) => {
     const role = req.query.role as string | undefined;
     const department = req.query.department as string | undefined;
 
-    const filter: any = {};
+    const filter: FilterQuery<IUser> = {};
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -71,9 +72,12 @@ const createEmployee = async (req: Request, res: Response) => {
 const updateEmployee = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updates: any = { ...req.body };
-    if (updates.password) {
-      updates.password = await bcrypt.hash(updates.password, 10);
+    const updates = req.body as UpdateQuery<IUser>;
+    if ((updates as { password?: unknown }).password) {
+      // ensure password is a string before hashing
+      const p = String((updates as { password?: unknown }).password);
+      const hashed = await bcrypt.hash(p, 10);
+      (updates as Partial<IUser>).password = hashed;
     }
     const updated = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
     if (!updated) return sendError(res, 'Employee not found', 404);

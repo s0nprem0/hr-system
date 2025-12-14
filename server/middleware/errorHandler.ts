@@ -8,7 +8,14 @@ export default function errorHandler(err: unknown, req: Request, res: Response, 
   // Log the error using structured logger
   logger.error({ err, url: req.url, method: req.method }, 'Uncaught error');
 
-  const status = (err as any)?.status || (err as any)?.statusCode || 500;
+  // Safely derive status code if present on the error object
+  let status = 500;
+  if (typeof err === 'object' && err !== null) {
+    const maybe = (err as { status?: unknown; statusCode?: unknown });
+    const s = typeof maybe.status === 'number' ? maybe.status : typeof maybe.statusCode === 'number' ? maybe.statusCode : undefined;
+    if (typeof s === 'number') status = s;
+  }
+
   const message = err instanceof Error ? err.message : String(err ?? 'Internal Server Error');
 
   // Use sendError to ensure consistent error response shape across controllers

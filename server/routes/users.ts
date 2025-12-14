@@ -4,6 +4,7 @@ import authorize from '../middleware/authorize';
 import validationHandler from '../middleware/validationHandler';
 import { param, body } from 'express-validator';
 import type { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import User, { IUser } from '../models/User';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import AuditLog from '../models/AuditLog';
@@ -19,7 +20,7 @@ router.get('/', verifyUser, authorize(['admin', 'hr']), async (req, res) => {
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
     const role = typeof req.query.role === 'string' ? req.query.role : undefined;
 
-    const filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -125,7 +126,7 @@ router.put(
       const { id } = req.params;
       const updates: Partial<Record<string, unknown>> = { ...req.body };
       // Use a typed copy so we can safely check and hash the password
-      const safeUpdates = { ...updates } as Record<string, any>;
+      const safeUpdates = { ...(updates as Partial<Record<string, unknown>>) } as Partial<Record<string, unknown>>;
       if (typeof safeUpdates.password === 'string' && safeUpdates.password.length > 0) {
         const bcrypt = await import('bcryptjs');
         safeUpdates.password = await bcrypt.hash(safeUpdates.password, 10);
