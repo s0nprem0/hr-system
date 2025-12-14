@@ -68,7 +68,9 @@ router.delete(
 router.get('/:id', verifyUser, authorize(['admin', 'hr']), [param('id').isMongoId().withMessage('Invalid id')], validationHandler, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    logger.info({ id }, 'GET /api/users/:id requested');
     const user = await User.findById(id).select('-password').lean();
+    logger.info({ found: !!user, id }, 'GET /api/users/:id lookup result');
     if (!user) return sendError(res, 'User not found', 404);
     return sendSuccess(res, user);
   } catch (err: unknown) {
