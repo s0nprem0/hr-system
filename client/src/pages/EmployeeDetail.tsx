@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import api from '../utils/api';
 import axios from 'axios';
 import handleApiError from '../utils/handleApiError';
+import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
 
@@ -24,8 +25,7 @@ const EmployeeDetail = () => {
 
   const fetchEmployee = async () => {
     if (!id) return;
-    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(id);
-    if (!isValidHex24) {
+    if (!isValidMongoId(id)) {
       setError('Invalid employee id');
       return;
     }
@@ -50,8 +50,7 @@ const EmployeeDetail = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(id);
-    if (!isValidHex24) {
+    if (!isValidMongoId(id)) {
       toast.showToast('Invalid employee id', 'error');
       return;
     }

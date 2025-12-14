@@ -7,8 +7,8 @@ import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import User, { IUser } from '../models/User';
 import { sendSuccess, sendError } from '../utils/apiResponse';
-import AuditLog from '../models/AuditLog';
 import logger from '../logger';
+import safeAuditLog from '../utils/auditLogger';
 
 const router = express.Router();
 
@@ -101,19 +101,15 @@ router.post(
       const created = await User.create({ name, email, password: hashed, role: role || 'employee' });
       const result = await User.findById(created._id).select('-password');
 
-      // audit log
-      try {
-        await AuditLog.create({
-          collectionName: 'User',
-          documentId: created._id,
-          action: 'create',
-          user: req.user?._id,
-          before: null,
-          after: result,
-        });
-      } catch (auditErr) {
-        logger.warn({ auditErr }, 'Failed to write user audit log (create)');
-      }
+      // audit log (non-blocking)
+      await safeAuditLog({
+        collectionName: 'User',
+        documentId: created._id,
+        action: 'create',
+        user: req.user?._id,
+        before: null,
+        after: result,
+      });
 
       return sendSuccess(res, result, 201);
     } catch (err: unknown) {
@@ -151,18 +147,14 @@ router.put(
       const updated = await User.findByIdAndUpdate(id, safeUpdates, { new: true }).select('-password');
       if (!updated) return sendError(res, 'User not found', 404);
 
-      try {
-        await AuditLog.create({
-          collectionName: 'User',
-          documentId: id,
-          action: 'update',
-          user: req.user?._id,
-          before,
-          after: updated,
-        });
-      } catch (auditErr) {
-        logger.warn({ auditErr }, 'Failed to write user audit log (update)');
-      }
+      await safeAuditLog({
+        collectionName: 'User',
+        documentId: id,
+        action: 'update',
+        user: req.user?._id,
+        before,
+        after: updated,
+      });
 
       return sendSuccess(res, updated);
     } catch (err: unknown) {

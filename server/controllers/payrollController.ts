@@ -3,7 +3,7 @@ import Payroll from '../models/Payroll';
 import User from '../models/User';
 import logger from '../logger';
 import { sendSuccess, sendError } from '../utils/apiResponse';
-import AuditLog from '../models/AuditLog';
+import safeAuditLog from '../utils/auditLogger';
 import mongoose from 'mongoose';
 
 const listPayroll = async (req: Request, res: Response) => {
@@ -14,7 +14,7 @@ const listPayroll = async (req: Request, res: Response) => {
     const from = req.query.from as string | undefined;
     const to = req.query.to as string | undefined;
 
-    const filter: Record<string, unknown> = {};
+    const filter: any = {};
     if (employeeId && mongoose.isValidObjectId(employeeId)) filter.employee = employeeId;
     if (from || to) filter.payDate = {};
     if (from) filter.payDate.$gte = new Date(from);
@@ -58,19 +58,15 @@ const createPayroll = async (req: Request, res: Response) => {
     const entry = await Payroll.create({ employee: employeeId, amount, payDate: payDate ? new Date(payDate) : new Date() });
     const result = await Payroll.findById(entry._id).populate('employee', 'name email role profile');
 
-    // audit log
-    try {
-        await AuditLog.create({
-        collectionName: 'Payroll',
-        documentId: entry._id,
-        action: 'create',
-        user: req.user?._id,
-        before: null,
-        after: result,
-      });
-    } catch (auditErr) {
-      logger.warn({ auditErr }, 'Failed to write payroll audit log (create)');
-    }
+    // audit log (non-blocking)
+    await safeAuditLog({
+      collectionName: 'Payroll',
+      documentId: entry._id,
+      action: 'create',
+      user: req.user?._id,
+      before: null,
+      after: result,
+    });
 
     return sendSuccess(res, result, 201);
   } catch (err: unknown) {
@@ -89,24 +85,20 @@ const updatePayroll = async (req: Request, res: Response) => {
       updates.employee = updates.employeeId;
       delete updates.employeeId;
     }
-    if (updates.payDate) updates.payDate = new Date(updates.payDate);
+    if (updates.payDate) updates.payDate = new Date(String(updates.payDate));
 
     const before = await Payroll.findById(id).lean();
     const updated = await Payroll.findByIdAndUpdate(id, updates, { new: true }).populate('employee', 'name email role profile');
     if (!updated) return sendError(res, 'Payroll entry not found', 404);
 
-    try {
-      await AuditLog.create({
-        collectionName: 'Payroll',
-        documentId: id,
-        action: 'update',
-        user: req.user?._id,
-        before,
-        after: updated,
-      });
-    } catch (auditErr) {
-      logger.warn({ auditErr }, 'Failed to write payroll audit log (update)');
-    }
+    await safeAuditLog({
+      collectionName: 'Payroll',
+      documentId: id,
+      action: 'update',
+      user: req.user?._id,
+      before,
+      after: updated,
+    });
 
     return sendSuccess(res, updated);
   } catch (err: unknown) {
@@ -122,18 +114,14 @@ const deletePayroll = async (req: Request, res: Response) => {
     const removed = await Payroll.findByIdAndDelete(id).populate('employee', 'name email');
     if (!removed) return sendError(res, 'Payroll entry not found', 404);
 
-    try {
-      await AuditLog.create({
-        collectionName: 'Payroll',
-        documentId: id,
-        action: 'delete',
-        user: req.user?._id,
-        before: removed,
-        after: null,
-      });
-    } catch (auditErr) {
-      logger.warn({ auditErr }, 'Failed to write payroll audit log (delete)');
-    }
+    await safeAuditLog({
+      collectionName: 'Payroll',
+      documentId: id,
+      action: 'delete',
+      user: req.user?._id,
+      before: removed,
+      after: null,
+    });
 
     return sendSuccess(res, removed);
   } catch (err: unknown) {

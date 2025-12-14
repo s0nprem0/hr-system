@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
+import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
 
 const EmployeeForm = () => {
@@ -34,8 +35,7 @@ const EmployeeForm = () => {
 
   const fetchEmployee = async () => {
     if (!params.id) return;
-    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(params.id);
-    if (!isValidHex24) {
+    if (!isValidMongoId(params.id)) {
       setError('Invalid employee id');
       return;
     }

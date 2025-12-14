@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback } from 'react';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
+import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
 
 interface EmployeeShort {
@@ -36,8 +37,7 @@ const PayrollForm = () => {
 
   const fetchPayroll = useCallback(async () => {
     if (!params.id) return;
-    const isValidHex24 = /^[0-9a-fA-F]{24}$/.test(params.id);
-    if (!isValidHex24) {
+    if (!isValidMongoId(params.id)) {
       setError('Invalid payroll id');
       return;
     }
