@@ -14,4 +14,16 @@ Notes:
 - Health endpoint returns DB state, uptime and memory; returns 503 when DB not ready.
 -->
 
+-->
+
+## Modernization recommendations
+
+- **Monorepo / Workspace:** consolidate `client/` and `server/` into a monorepo (pnpm workspaces, Turbo/Gradle/ Nx) to simplify cross-package scripts, shared types, and CI.
+- **Package manager:** standardize on `pnpm` (or `bun` for runtime, `pnpm` for workspace installs) for faster installs, reproducible lockfiles and workspace support.
+- **Shared types:** add a `packages/shared` (or `shared/`) package with API request/response types and common domain models to eliminate type drift.
+- **Tests & Runners:** prefer `vitest` for client/unit tests and consider `bun test` or `vitest` for server unit tests; keep Jest only if you need its ecosystem features.
+- **CI Improvements:** make CI matrix run lint/typecheck/tests, enable caching (pnpm/bun), surface artifacts (coverage reports), and add `dependabot` updates.
+- **Observability:** add structured logging (Pino → remote sink), error reporting (Sentry), and metrics (Prometheus + Grafana or hosted APM) with health/readiness endpoints.
+- **Security / Secrets:** add secret scanning, Dependabot, and an automated SCA step; add runtime secret validation and stricter CORS defaults.
+- **Containers & Infra:** add Dockerfiles for `server` and `client`, a `docker-compose` for local development, and container readiness/liveness probes for k8s.
 ```
