@@ -1,7 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
-import axios from 'axios';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
@@ -23,27 +22,29 @@ const EmployeeDetail = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEmployee = async () => {
-    if (!id) return;
-    if (!isValidMongoId(id)) {
-      setError('Invalid employee id');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.get(`/api/employees/${id}`);
-      setEmployee(res.data?.data || null);
-    } catch (err: unknown) {
-      const apiErr = handleApiError(err);
-      if (/not found/i.test(apiErr.message)) setError('Employee not found');
-      else setError(apiErr.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      if (!id) return;
+      if (!isValidMongoId(id)) {
+        setError('Invalid employee id');
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.get(`/api/employees/${id}`);
+        setEmployee(res.data?.data || null);
+      } catch (err: unknown) {
+        const apiErr = handleApiError(err);
+        if (/not found/i.test(apiErr.message)) setError('Employee not found');
+        else setError(apiErr.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => { fetchEmployee(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
+    fetchEmployee();
+  }, [id]);
 
   const toast = useToast();
   const confirm = useConfirm();

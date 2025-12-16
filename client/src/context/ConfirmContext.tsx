@@ -1,4 +1,7 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import Dialog from '../components/ui/Dialog';
+import Button from '../components/ui/Button';
 
 type ConfirmResolve = (value: boolean) => void;
 interface ConfirmState {
@@ -25,17 +28,13 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      {current && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded shadow p-6 max-w-sm w-full">
-            <div className="mb-4 text-sm text-slate-900">{current.message}</div>
-            <div className="flex justify-end gap-2">
-              <button className="btn" onClick={() => handle(false)}>Cancel</button>
-              <button className="btn" onClick={() => handle(true)}>Confirm</button>
-            </div>
-          </div>
+      <Dialog isOpen={!!current} onClose={() => handle(false)} title="Confirm">
+        <div className="mb-4 text-sm text-slate-900">{current?.message}</div>
+        <div className="flex justify-end gap-2">
+          <Button onClick={() => handle(false)}>Cancel</Button>
+          <Button variant="primary" onClick={() => handle(true)}>Confirm</Button>
         </div>
-      )}
+      </Dialog>
     </ConfirmContext.Provider>
   );
 };

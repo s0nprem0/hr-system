@@ -10,6 +10,7 @@ interface Employee {
   name: string;
   email: string;
   role: string;
+  active?: boolean;
   profile?: { department?: { name?: string } } | null;
 }
 
@@ -46,6 +47,12 @@ const EmployeesList = () => {
     {
       key: 'role',
       header: 'Role',
+    },
+    {
+      key: 'active',
+      header: 'Active',
+      render: (employee) => (employee.active ? <span className="text-success">Active</span> : <span className="muted">Inactive</span>),
+      className: 'w-24',
     },
     {
       key: 'department',

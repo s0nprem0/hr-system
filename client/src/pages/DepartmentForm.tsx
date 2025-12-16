@@ -4,6 +4,9 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
+import Input from '../components/ui/Input';
+import Textarea from '../components/ui/Textarea';
+import Button from '../components/ui/Button';
 
 const DepartmentForm = () => {
   const navigate = useNavigate();
@@ -20,28 +23,30 @@ const DepartmentForm = () => {
 
   const toast = useToast();
 
-  const fetchDepartment = async () => {
-    if (!params.id) return;
-    if (!isValidMongoId(params.id)) {
-      setError('Invalid department id');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await api.get(`/api/departments/${params.id}`);
-      const d = res.data?.data;
-      setName(d?.name || '');
-      setDescription(d?.description || '');
-    } catch (err: unknown) {
-      const apiErr = handleApiError(err);
-      if (/not found/i.test(apiErr.message)) setError('Department not found');
-      else setError(apiErr.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchDepartment = async () => {
+      if (!params.id) return;
+      if (!isValidMongoId(params.id)) {
+        setError('Invalid department id');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await api.get(`/api/departments/${params.id}`);
+        const d = res.data?.data;
+        setName(d?.name || '');
+        setDescription(d?.description || '');
+      } catch (err: unknown) {
+        const apiErr = handleApiError(err);
+        if (/not found/i.test(apiErr.message)) setError('Department not found');
+        else setError(apiErr.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => { if (isEdit) fetchDepartment(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [params.id]);
+    if (isEdit) fetchDepartment();
+  }, [isEdit, params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,19 +86,16 @@ const DepartmentForm = () => {
           {error && <div className="text-danger">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input ref={nameRef} aria-invalid={!!formErrors.name} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
-            {formErrors.name && <div className="text-sm text-danger mt-1">{formErrors.name}</div>}
+            <Input ref={nameRef} label="Name" aria-invalid={!!formErrors.name} value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Description</label>
-            <textarea className="input" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea label="Description" value={description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)} />
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
-            <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+            <Button type="button" onClick={() => navigate(-1)} disabled={saving}>Cancel</Button>
+            <Button type="submit" variant="primary" loading={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
       </div>

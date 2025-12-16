@@ -15,6 +15,10 @@
   --cp-primary: #f2cdcd;
   --cp-primary-foreground: #2a2a37;
   --cp-primary-hover: #e6c3c3;
+  /* stronger CTA token for primary actions */
+  --cp-cta: #e0557a;
+  --cp-cta-foreground: #ffffff;
+  --cp-cta-hover: #c94b6e;
   --cp-accent: #f5bde6;
   --cp-accent-foreground: #3a2b3b;
   --cp-border: #e6e9ef;
@@ -32,6 +36,9 @@
   --cp-primary: #f5c2e7;
   --cp-primary-foreground: #221826;
   --cp-primary-hover: #f0bfe0;
+  --cp-cta: #ff7abf;
+  --cp-cta-foreground: #ffffff;
+  --cp-cta-hover: #f06fb4;
   --cp-accent: #89dceb;
   --cp-accent-foreground: #062027;
   --cp-border: #2a2a3a;

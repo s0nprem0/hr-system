@@ -4,6 +4,10 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import Label from '../components/ui/Label';
+import Checkbox from '../components/ui/Checkbox';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
@@ -15,6 +19,7 @@ const EmployeeForm = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'admin' | 'hr' | 'employee'>('employee');
   const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
+  const [active, setActive] = useState(true);
 
   const [departments, setDepartments] = useState<Array<{ _id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -28,43 +33,45 @@ const EmployeeForm = () => {
   const passwordRef = useRef<HTMLInputElement | null>(null);
   const toast = useToast();
 
-  const fetchDepartments = async () => {
-    try {
-      const res = await api.get('/api/departments');
-      setDepartments(res.data?.data?.items || []);
-    } catch {
-      // ignore
-    }
-  };
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await api.get('/api/departments');
+        setDepartments(res.data?.data?.items || []);
+      } catch {
+        // ignore
+      }
+    };
 
-  const fetchEmployee = async () => {
-    if (!params.id) return;
-    if (!isValidMongoId(params.id)) {
-      setError('Invalid employee id');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await api.get(`/api/employees/${params.id}`);
-      const e = res.data?.data;
-      setName(e?.name || '');
-      setEmail(e?.email || '');
-      setRole(e?.role || 'employee');
-      setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
-    } catch (err: unknown) {
-      const apiErr = handleApiError(err);
-      if (/not found/i.test(apiErr.message)) setError('Employee not found');
-      else setError(apiErr.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
-    fetchDepartments();
+    const fetchEmployee = async () => {
+      if (!params.id) return;
+      if (!isValidMongoId(params.id)) {
+        setError('Invalid employee id');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await api.get(`/api/employees/${params.id}`);
+        const e = res.data?.data;
+        setName(e?.name || '');
+        setEmail(e?.email || '');
+        setRole(e?.role || 'employee');
+        setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
+      } catch (err: unknown) {
+        const apiErr = handleApiError(err);
+        if (/not found/i.test(apiErr.message)) setError('Employee not found');
+        else setError(apiErr.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isEdit) fetchEmployee();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id]);
+  }, [isEdit, params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,13 +104,14 @@ const EmployeeForm = () => {
     setSaving(true);
     try {
       if (isEdit && params.id) {
+        (payload as Record<string, unknown>).active = active;
         await api.put(`/api/employees/${params.id}`, payload);
         setSuccess('Employee updated');
         toast.showToast('Employee updated', 'success');
         // give user a chance to see success message
         navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900) as unknown as number;
       } else {
-        const res = await api.post('/api/employees', { ...payload, password });
+        const res = await api.post('/api/employees', { ...payload, password, active });
         const created = res.data?.data;
         setSuccess('Employee created');
         toast.showToast('Employee created', 'success');
@@ -149,40 +157,37 @@ const EmployeeForm = () => {
           {success && <div className="text-success">{success}</div>}
 
           <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input ref={nameRef} aria-invalid={!!formErrors.name} className="input" value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
-            {formErrors.name && <div className="text-sm text-danger mt-1">{formErrors.name}</div>}
+            <Input ref={nameRef} label="Name" aria-invalid={!!formErrors.name} value={name} onChange={(e) => { setName(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.name; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input ref={emailRef} aria-invalid={!!formErrors.email} className="input" value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} />
-            {formErrors.email && <div className="text-sm text-danger mt-1">{formErrors.email}</div>}
+            <Input ref={emailRef} label="Email" aria-invalid={!!formErrors.email} value={email} onChange={(e) => { setEmail(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.email; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Password {isEdit ? '(leave blank to keep)' : ''}</label>
-            <input ref={passwordRef} aria-invalid={!!formErrors.password} type="password" className="input" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} />
-            {formErrors.password && <div className="text-sm text-danger mt-1">{formErrors.password}</div>}
+            <Input ref={passwordRef} label={`Password ${isEdit ? '(leave blank to keep)' : ''}`} aria-invalid={!!formErrors.password} type="password" value={password} onChange={(e) => { setPassword(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.password; return c; }); }} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Role</label>
-            <select className="input" value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
+            <Select label="Role" value={role} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRole(e.target.value as 'admin' | 'hr' | 'employee')}>
               <option value="employee">Employee</option>
               <option value="hr">HR</option>
               <option value="admin">Admin</option>
-            </select>
+            </Select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Department</label>
+            <Label>Department</Label>
             <select className="input" value={departmentId || ''} onChange={(e) => setDepartmentId(e.target.value || undefined)}>
               <option value="">-- none --</option>
               {departments.map((d) => (
                 <option key={d._id} value={d._id}>{d.name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Checkbox label="Active" checked={active} onChange={(e) => setActive(e.target.checked)} />
           </div>
 
           <div className="flex gap-2 justify-end">
