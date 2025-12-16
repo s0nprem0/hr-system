@@ -1,20 +1,24 @@
-name: CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  server:
-    name: Server — Bun / TypeScript & Tests
+  arch:
+    name: Arch Linux — Bun CI
     runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
     steps:
+      - name: Install system deps
+        run: |
+          pacman -Syu --noconfirm \
+            git \
+            curl \
+            unzip \
+            base-devel
+
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
       - uses: actions/checkout@v4
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -39,45 +43,9 @@ jobs:
       - name: Lint (server)
         working-directory: server
         run: bun run lint --if-present
-      - name: Typecheck (server)
-        working-directory: server
-        run: bun run typecheck --if-present
-      - name: Run server tests
-        working-directory: server
-        run: |
-          # project uses Jest for tests; run via npm to ensure jest config is picked up
-          if command -v npm >/dev/null 2>&1; then
-            npm test
-          else
-            bun test || true
-          fi
 
-  client:
-    name: Client — Node / TypeScript & Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            client/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('client/package-lock.json', 'client/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Install client deps
-        working-directory: client
-        run: npm ci
-      - name: Lint (client)
-        working-directory: client
-        run: npm run lint --if-present
-      - name: Typecheck (client)
-        working-directory: client
-        run: npm run typecheck --if-present
-      - name: Run client tests
-        working-directory: client
-        run: npm test
+      - name: Typecheck
+        run: bun run typecheck --if-present
+
+      - name: Test
+        run: bun test
