@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import type { AuthLoginResponse } from '@hr/shared';
+import { safeSetItem } from '../utils/storage';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,13 +23,13 @@ const Login = () => {
       setLoading(true);
       const res = await api.post('/api/auth/login', { email, password });
       if (res.data?.success) {
-        // server returns standardized payload: { success: true, data: { token, user } }
-        const token = res.data?.data?.token;
-        const refreshToken = res.data?.data?.refreshToken;
-        const user = res.data?.data?.user;
-        if (token) safeSetItem('token', token);
-        if (refreshToken) safeSetItem('refreshToken', refreshToken);
-        auth?.login(user, token);
+        // server returns standardized payload: { success: true, data: { token, refreshToken, user } }
+        const payload = res.data?.data as AuthLoginResponse | undefined;
+        if (payload) {
+          safeSetItem('token', payload.token);
+          safeSetItem('refreshToken', payload.refreshToken);
+          auth?.login(payload.user, payload.token);
+        }
         // Redirect to unified dashboard
         navigate('/dashboard');
       } else {

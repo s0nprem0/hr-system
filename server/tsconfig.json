@@ -19,6 +19,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    "baseUrl": "./",
+    "paths": {
+      "@hr/shared": ["../shared/src"]
+    },
 
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
