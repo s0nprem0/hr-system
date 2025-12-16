@@ -1,4 +1,5 @@
 import express from 'express';
+import { sendSuccess } from '../utils/apiResponse';
 import { login, verify, register, refresh, logout } from '../controllers/authController';
 import verifyUser from '../middleware/authMiddleware';
 import authorize from '../middleware/authorize';
@@ -37,7 +38,7 @@ router.post('/logout', validationHandler, logout);
 
 // Sample protected admin route (returns basic info if user is admin)
 router.get('/admin', verifyUser, authorize(['admin']), (req, res) => {
-	return res.status(200).json({ success: true, message: 'Admin access granted', user: req.user });
+	return sendSuccess(res, { message: 'Admin access granted', user: req.user }, 200);
 });
 
 export default router;
