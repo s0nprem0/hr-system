@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000';
 
@@ -18,13 +19,9 @@ const api = axios.create({
 
 // Request: attach token if present
 api.interceptors.request.use((config) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  } catch {
-    // ignore storage errors
+  const token = safeGetItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -32,19 +29,27 @@ api.interceptors.request.use((config) => {
 // Response: handle 401 globally
 // Token refresh flow: when a request gets 401, attempt to refresh access token using refresh token.
 let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
+type Subscriber = { resolve: (token: string) => void; reject: (err: unknown) => void };
+let refreshSubscribers: Subscriber[] = [];
 
-function subscribeToken(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
+function subscribeToken(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    refreshSubscribers.push({ resolve, reject });
+  });
 }
 
 function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers.forEach((s) => s.resolve(token));
+  refreshSubscribers = [];
+}
+
+function onRefreshFailed(err: unknown) {
+  refreshSubscribers.forEach((s) => s.reject(err));
   refreshSubscribers = [];
 }
 
 async function refreshAuth(): Promise<string> {
-  const refreshToken = localStorage.getItem('refreshToken');
+  const refreshToken = safeGetItem('refreshToken');
   if (!refreshToken) return Promise.reject({ response: { data: { error: { message: 'No refresh token' } } }, status: 401 });
   const resp = await axios.post(`${API_URL}/api/auth/refresh`, { refreshToken });
   if (!resp.data?.success) {
@@ -54,12 +59,8 @@ async function refreshAuth(): Promise<string> {
   const newToken = resp.data?.data?.token;
   const newRefresh = resp.data?.data?.refreshToken;
   if (!newToken) return Promise.reject({ response: { data: { error: { message: 'No token in refresh response' } } }, status: 500 });
-  try {
-    localStorage.setItem('token', newToken);
-    if (newRefresh) localStorage.setItem('refreshToken', newRefresh);
-  } catch {
-    // ignore
-  }
+  safeSetItem('token', newToken);
+  if (newRefresh) safeSetItem('refreshToken', newRefresh);
   return newToken;
 }
 
@@ -68,29 +69,40 @@ api.interceptors.response.use(
   async (err) => {
     const originalRequest = err.config;
     const status = err?.response?.status;
-    if (status === 401 && !originalRequest?._retry) {
+    // avoid trying to refresh if the failing request was the refresh endpoint itself
+    const isRefreshEndpoint = originalRequest?.url?.includes('/api/auth/refresh');
+    if (status === 401 && !originalRequest?._retry && !isRefreshEndpoint) {
+      // mark request as retried to avoid loops
       originalRequest._retry = true;
+
+      // create subscriber promise first so we don't miss the resolution
+      const pending = subscribeToken();
+
+      // start refresh if not already in progress (do not await here)
       if (!isRefreshing) {
         isRefreshing = true;
-        try {
-          const newToken = await refreshAuth();
-          isRefreshing = false;
-          onRefreshed(newToken);
-        } catch (refreshErr) {
-          isRefreshing = false;
-          // emit unauthorized for app to handle logout/redirect
-          if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-          return Promise.reject(refreshErr);
-        }
+        refreshAuth()
+          .then((newToken) => {
+            isRefreshing = false;
+            onRefreshed(newToken);
+          })
+          .catch((refreshErr) => {
+            isRefreshing = false;
+            safeRemoveItem('token');
+            safeRemoveItem('refreshToken');
+            onRefreshFailed(refreshErr);
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { reason: 'refresh_failed' } }));
+          });
       }
 
-      return new Promise((resolve) => {
-        subscribeToken((token: string) => {
-          if (!originalRequest.headers) originalRequest.headers = {};
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          resolve(axios(originalRequest));
-        });
-      });
+      try {
+        const token = await pending;
+        if (!originalRequest.headers) originalRequest.headers = {};
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return axios(originalRequest);
+      } catch (e) {
+        return Promise.reject(e);
+      }
     }
     return Promise.reject(err);
   },

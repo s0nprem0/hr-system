@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../utils/api';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
 
 // Define types
 interface User {
@@ -26,7 +27,7 @@ export function AuthContext({ children }: { children: ReactNode }) {
     useEffect(() => {
         const verifyUser = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = safeGetItem('token');
                 if (token) {
                     const response = await api.get('/api/auth/verify');
                     if (response.data?.success) {
@@ -46,15 +47,11 @@ export function AuthContext({ children }: { children: ReactNode }) {
         verifyUser();
         // Listen for global unauthorized events emitted by the API layer
         const onUnauthorized = () => {
-            try {
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-            } catch {
-                // ignore
-            }
+            safeRemoveItem('token');
+            safeRemoveItem('refreshToken');
             setUser(null);
-            // redirect to login
-            if (typeof window !== 'undefined') window.location.href = '/login';
+            // redirect to login using replace to avoid back navigation to protected pages
+            if (typeof window !== 'undefined') window.location.replace('/login');
         };
         window.addEventListener('auth:unauthorized', onUnauthorized as EventListener);
         return () => {
@@ -66,21 +63,17 @@ export function AuthContext({ children }: { children: ReactNode }) {
         setUser(userParam);
         try {
             if (token) {
-                localStorage.setItem('token', token);
+                safeSetItem('token', token);
             }
         } catch {
-            // ignore storage errors
+            // ignore
         }
     }
 
     function logout() {
         setUser(null);
-        try {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-        } catch {
-            // ignore storage errors
-        }
+        safeRemoveItem('token');
+        safeRemoveItem('refreshToken');
     }
 
     return (
