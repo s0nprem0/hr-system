@@ -36,7 +36,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
       <div aria-live="polite" className="fixed z-50 top-4 right-4 flex flex-col gap-2">
         {toasts.map((t) => (
-          <div key={t.id} className={`px-4 py-2 rounded shadow text-sm max-w-xs break-words ${t.type === 'success' ? 'bg-green-100 text-green-900' : t.type === 'error' ? 'bg-red-100 text-red-900' : 'bg-slate-100 text-slate-900'}`}>
+          <div key={t.id} className={`px-4 py-2 rounded shadow text-sm max-w-xs wrap-break-wordbreak-words ${t.type === 'success' ? 'bg-green-100 text-green-900' : t.type === 'error' ? 'bg-red-100 text-red-900' : 'bg-slate-100 text-slate-900'}`}>
             {t.message}
           </div>
         ))}
