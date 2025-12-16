@@ -33,43 +33,45 @@ const EmployeeForm = () => {
   const passwordRef = useRef<HTMLInputElement | null>(null);
   const toast = useToast();
 
-  const fetchDepartments = async () => {
-    try {
-      const res = await api.get('/api/departments');
-      setDepartments(res.data?.data?.items || []);
-    } catch {
-      // ignore
-    }
-  };
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await api.get('/api/departments');
+        setDepartments(res.data?.data?.items || []);
+      } catch {
+        // ignore
+      }
+    };
 
-  const fetchEmployee = async () => {
-    if (!params.id) return;
-    if (!isValidMongoId(params.id)) {
-      setError('Invalid employee id');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await api.get(`/api/employees/${params.id}`);
-      const e = res.data?.data;
-      setName(e?.name || '');
-      setEmail(e?.email || '');
-      setRole(e?.role || 'employee');
-      setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
-    } catch (err: unknown) {
-      const apiErr = handleApiError(err);
-      if (/not found/i.test(apiErr.message)) setError('Employee not found');
-      else setError(apiErr.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
-    fetchDepartments();
+    const fetchEmployee = async () => {
+      if (!params.id) return;
+      if (!isValidMongoId(params.id)) {
+        setError('Invalid employee id');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await api.get(`/api/employees/${params.id}`);
+        const e = res.data?.data;
+        setName(e?.name || '');
+        setEmail(e?.email || '');
+        setRole(e?.role || 'employee');
+        setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
+      } catch (err: unknown) {
+        const apiErr = handleApiError(err);
+        if (/not found/i.test(apiErr.message)) setError('Employee not found');
+        else setError(apiErr.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isEdit) fetchEmployee();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id]);
+  }, [isEdit, params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

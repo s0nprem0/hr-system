@@ -23,28 +23,30 @@ const DepartmentForm = () => {
 
   const toast = useToast();
 
-  const fetchDepartment = async () => {
-    if (!params.id) return;
-    if (!isValidMongoId(params.id)) {
-      setError('Invalid department id');
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await api.get(`/api/departments/${params.id}`);
-      const d = res.data?.data;
-      setName(d?.name || '');
-      setDescription(d?.description || '');
-    } catch (err: unknown) {
-      const apiErr = handleApiError(err);
-      if (/not found/i.test(apiErr.message)) setError('Department not found');
-      else setError(apiErr.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const fetchDepartment = async () => {
+      if (!params.id) return;
+      if (!isValidMongoId(params.id)) {
+        setError('Invalid department id');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await api.get(`/api/departments/${params.id}`);
+        const d = res.data?.data;
+        setName(d?.name || '');
+        setDescription(d?.description || '');
+      } catch (err: unknown) {
+        const apiErr = handleApiError(err);
+        if (/not found/i.test(apiErr.message)) setError('Department not found');
+        else setError(apiErr.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => { if (isEdit) fetchDepartment(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [params.id]);
+    if (isEdit) fetchDepartment();
+  }, [isEdit, params.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

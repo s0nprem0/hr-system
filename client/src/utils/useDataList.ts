@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { useToast } from '../context/ToastContext';
@@ -45,7 +45,7 @@ export function useDataList<T = unknown>(options: UseDataListOptions): UseDataLi
   const toast = useToast();
   const confirm = useConfirm();
 
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -59,15 +59,14 @@ export function useDataList<T = unknown>(options: UseDataListOptions): UseDataLi
     } finally {
       setLoading(false);
     }
-  };
+  }, [endpoint, page, pageSize, search]);
 
   useEffect(() => {
     fetchList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search]);
+  }, [fetchList]);
 
   const refetch = () => {
-    fetchList();
+    void fetchList();
   };
 
   const handleDelete = async (id: string) => {

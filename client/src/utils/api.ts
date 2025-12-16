@@ -6,7 +6,6 @@ if (!import.meta.env.VITE_API_URL) {
   // warn in dev that env var is missing and fallback is used
   // keep a small console warning to help catch config mistakes
   // (this is safe in dev; you can remove for production builds)
-  // eslint-disable-next-line no-console
   console.warn('VITE_API_URL is not set — falling back to http://localhost:5000');
 }
 
