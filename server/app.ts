@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
 import authRouter from './routes/auth';
 import usersRouter from './routes/users';
 import employeesRouter from './routes/employees';
@@ -29,7 +30,22 @@ export default function createApp() {
   app.use('/api/departments', departmentsRouter);
   app.use('/api/payroll', payrollRouter);
 
-  app.get('/health', (req, res) => res.json({ status: 'ok' }));
+  app.get('/health', (req, res) => {
+    const uptime = process.uptime();
+    const mem = process.memoryUsage();
+    const mongoState = mongoose.connection.readyState; // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    const dbStatus = mongoState === 1 ? 'connected' : mongoState === 2 ? 'connecting' : mongoState === 3 ? 'disconnecting' : 'disconnected';
+
+    const ok = mongoState === 1;
+    const statusCode = ok ? 200 : 503;
+
+    return res.status(statusCode).json({
+      status: ok ? 'ok' : 'degraded',
+      uptime,
+      memory: { rss: mem.rss, heapTotal: mem.heapTotal, heapUsed: mem.heapUsed },
+      db: { state: mongoState, status: dbStatus },
+    });
+  });
 
   // centralized error handler
   app.use(errorHandler);
