@@ -1,51 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  arch:
-    name: Arch Linux — Bun CI
+  server:
+    name: Server — Bun / Jest
     runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-
     steps:
-      - name: Install system deps
-        run: |
-          pacman -Syu --noconfirm \
-            git \
-            curl \
-            unzip \
-            base-devel
-
-      - name: Install Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
       - uses: actions/checkout@v4
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1'
-      - name: Cache Bun & node_modules
+      - name: Cache Bun & server deps
         uses: actions/cache@v4
         with:
           path: |
             ~/.bun
             server/node_modules
-            server/.bun
           key: ${{ runner.os }}-bun-${{ hashFiles('server/package.json') }}
           restore-keys: |
             ${{ runner.os }}-bun-
-      - name: Install server deps (bun)
+      - name: Install server deps
         working-directory: server
         run: |
           bun install
-          # ensure test runner deps are available for npm scripts
           if [ -f package-lock.json ]; then npm ci; fi
       - name: Lint (server)
         working-directory: server
         run: bun run lint --if-present
-
-      - name: Typecheck
+      - name: Typecheck (server)
+        working-directory: server
         run: bun run typecheck --if-present
+      - name: Run server tests (Jest)
+        working-directory: server
+        run: npm test
 
-      - name: Test
-        run: bun test
+  client:
+    name: Client — Node / Vite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1'
+      - name: Cache client deps (bun)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun
+            client/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('client/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install client deps (bun)
+        working-directory: client
+        run: |
+          bun install
+          if [ -f package-lock.json ]; then npm ci; fi
+      - name: Lint (client)
+        working-directory: client
+        run: bun run lint --if-present
+      - name: Typecheck (client)
+        working-directory: client
+        run: bun run typecheck --if-present
+      - name: Run client tests
+        working-directory: client
+        run: |
+          # prefer bun test if Vitest is available; fallback to npm
+          if command -v bun >/dev/null 2>&1; then
+            bun test || npm test
+          else
+            npm test
+          fi
