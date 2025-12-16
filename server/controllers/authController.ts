@@ -85,10 +85,15 @@ const refresh = async (req: Request, res: Response) => {
     try {
         const { refreshToken } = req.body;
         if (!refreshToken) return sendError(res, 'Refresh token required', 400);
+        // Atomically find the refresh token which is not revoked and not expired, and mark it revoked in one operation.
+        const now = new Date();
+        const found = await RefreshToken.findOneAndUpdate(
+            { token: refreshToken, revoked: { $ne: true }, expiresAt: { $gt: now } },
+            { $set: { revoked: true } },
+            { new: true },
+        );
 
-        const found = await RefreshToken.findOne({ token: refreshToken });
-        if (!found || found.revoked) return sendError(res, 'Refresh token invalid', 401);
-        if (found.expiresAt < new Date()) return sendError(res, 'Refresh token expired', 401);
+        if (!found) return sendError(res, 'Refresh token invalid or expired', 401);
 
         const user = await User.findById(found.user);
         if (!user) return sendError(res, 'User not found', 404);
@@ -96,23 +101,20 @@ const refresh = async (req: Request, res: Response) => {
         const jwtKey = process.env.JWT_KEY;
         if (!jwtKey) return sendError(res, 'Server misconfiguration', 500);
 
-            const signFn = jwt.sign as unknown as (payload: unknown, secret: Secret, options?: unknown) => string;
-            const token = signFn({ _id: user._id, role: user.role }, jwtKey as Secret, { expiresIn: process.env.JWT_EXPIRES || '1h' });
+        const signFn = jwt.sign as unknown as (payload: unknown, secret: Secret, options?: unknown) => string;
+        const token = signFn({ _id: user._id, role: user.role }, jwtKey as Secret, { expiresIn: process.env.JWT_EXPIRES || '1h' });
 
-            // Rotate refresh token: revoke old one and issue a new refresh token
-            const newRefreshValue = crypto.randomBytes(48).toString('hex');
-            const refreshTtlSeconds = Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7);
-            // mark old token revoked
-            found.revoked = true;
-            await found.save();
+        // Issue a new refresh token (single-use refresh tokens). Persist the new one.
+        const newRefreshValue = crypto.randomBytes(48).toString('hex');
+        const refreshTtlSeconds = Number(process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7);
+        const newRefresh = await RefreshToken.create({
+            token: newRefreshValue,
+            user: user._id,
+            expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
+            revoked: false,
+        });
 
-            const newRefresh = await RefreshToken.create({
-                token: newRefreshValue,
-                user: user._id,
-                expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
-            });
-
-            return sendSuccess(res, { token, refreshToken: newRefresh.token }, 200);
+        return sendSuccess(res, { token, refreshToken: newRefresh.token }, 200);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'refresh token error');
@@ -124,12 +126,13 @@ const logout = async (req: Request, res: Response) => {
     try {
         const { refreshToken } = req.body;
         if (!refreshToken) return sendError(res, 'Refresh token required', 400);
-        const found = await RefreshToken.findOne({ token: refreshToken });
-        if (found) {
-            found.revoked = true;
-            await found.save();
-        }
-        return sendSuccess(res, { revoked: !!found }, 200);
+        // Atomically mark the provided refresh token revoked (idempotent)
+        const result = await RefreshToken.findOneAndUpdate(
+            { token: refreshToken, revoked: { $ne: true } },
+            { $set: { revoked: true } },
+            { new: true },
+        );
+        return sendSuccess(res, { revoked: !!result }, 200);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'logout error');
