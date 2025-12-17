@@ -107,6 +107,14 @@ export function useAuth() {
     return useContext(userContext);
 }
 
+export function usePermissions() {
+    const ctx = useContext(userContext);
+    return {
+        permissions: ctx?.permissions ?? {},
+        can: ctx?.can ?? (() => false),
+    };
+}
+
 export function handleUnauthorized(redirectFn?: (path: string) => void) {
     try {
         safeRemoveItem('token');

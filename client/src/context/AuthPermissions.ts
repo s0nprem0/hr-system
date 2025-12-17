@@ -41,3 +41,17 @@ export function canRole(role: Role | null, permission: Permission) {
   const perms = getPermissions(role);
   return !!perms[permission];
 }
+
+export function formatRole(role?: string | null) {
+  if (!role) return 'User';
+  switch (role) {
+    case 'admin':
+      return 'Administrator';
+    case 'hr':
+      return 'HR';
+    case 'employee':
+      return 'Employee';
+    default:
+      return String(role).charAt(0).toUpperCase() + String(role).slice(1);
+  }
+}

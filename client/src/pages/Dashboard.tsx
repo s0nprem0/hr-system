@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import { formatRole } from '../context/AuthPermissions';
 import { useNavigate, Link } from 'react-router-dom';
 import PageContainer from '../components/layout/PageContainer';
 
@@ -11,13 +12,16 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  const role = auth?.user?.role;
+  const canManageEmployees = auth?.can?.("manageEmployees") ?? false;
+  const canManageUsers = auth?.can?.("manageUsers") ?? false;
+
+  const title = auth?.user ? formatRole(auth.user?.role) : 'Dashboard';
 
   return (
     <PageContainer>
       <div className="card mb-6 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">{role?.toUpperCase() ?? 'Dashboard'}</h1>
+            <h1 className="text-2xl font-bold">{title}</h1>
             <p className="muted">Welcome, {auth?.user?.name}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -27,7 +31,7 @@ const Dashboard = () => {
         </div>
 
         {/* Admin view */}
-        {role === 'admin' && (
+        {canManageUsers && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="card">
               <h2 className="text-xl font-semibold mb-2">Site Administration</h2>
@@ -41,7 +45,7 @@ const Dashboard = () => {
         )}
 
         {/* HR view */}
-        {role === 'hr' && (
+        {canManageEmployees && !canManageUsers && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="card">
               <h3 className="text-xl font-semibold mb-4">Employee Management</h3>
@@ -64,16 +68,16 @@ const Dashboard = () => {
         )}
 
         {/* Employee view */}
-        {role === 'employee' && (
+        {auth?.user && !canManageEmployees && !canManageUsers && (
           <div className="card">
             <h2 className="text-xl font-semibold mb-2">My Profile</h2>
             <p className="muted">Name: {auth?.user?.name}</p>
-            <p className="muted">Role: {auth?.user?.role}</p>
+            <p className="muted">Role: {formatRole(auth?.user?.role)}</p>
           </div>
         )}
 
         {/* Fallback for roles not matched */}
-        {!role && (
+        {!auth?.user && (
           <div className="card">
             <p className="muted">No role assigned. Contact administrator.</p>
           </div>

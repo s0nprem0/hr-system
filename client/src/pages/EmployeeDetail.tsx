@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import PageContainer from '../components/layout/PageContainer';
+import { formatRole } from '../context/AuthPermissions';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
@@ -77,7 +78,7 @@ const EmployeeDetail = () => {
             <div className="space-y-2 mt-3">
               <div><strong>Name:</strong> {employee.name}</div>
               <div><strong>Email:</strong> {employee.email}</div>
-              <div><strong>Role:</strong> {employee.role}</div>
+              <div><strong>Role:</strong> {formatRole(employee.role)}</div>
               <div><strong>Department:</strong> {employee.profile?.department?.name ?? '-'}</div>
               <div><strong>Created:</strong> {employee.createdAt ? new Date(employee.createdAt).toLocaleString() : '-'}</div>
             </div>

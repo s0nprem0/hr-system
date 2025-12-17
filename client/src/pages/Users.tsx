@@ -1,4 +1,5 @@
 import { useDataList } from '../utils/useDataList';
+import { formatRole } from '../context/AuthPermissions';
 import { PageHeader } from '../components/PageHeader';
 import PageContainer from '../components/layout/PageContainer';
 import { DataTable, type Column } from '../components/DataTable';
@@ -45,7 +46,7 @@ const Users = () => {
     {
       key: 'role',
       header: 'Role',
-      render: (user) => user.role || 'user',
+      render: (user) => formatRole(user.role),
     },
     {
       key: 'active',

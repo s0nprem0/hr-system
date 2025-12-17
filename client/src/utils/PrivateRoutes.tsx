@@ -18,7 +18,7 @@ const PrivateRoutes = ({ children, requiredRole }: PrivateRoutesProps) => {
         return <Navigate to="/login" />;
     }
 
-    if (requiredRole && !requiredRole.includes(auth.user.role)) {
+    if (requiredRole && (!auth || !auth.hasAnyRole || !auth.hasAnyRole(requiredRole as any))) {
         return <Navigate to="/unauthorized" />;
     }
 

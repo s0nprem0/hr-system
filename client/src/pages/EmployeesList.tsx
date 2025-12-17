@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import { formatRole } from '../context/AuthPermissions';
 import { useDataList } from '../utils/useDataList';
 import { PageHeader } from '../components/PageHeader';
 import { DataTable, type Column } from '../components/DataTable';
@@ -77,7 +78,7 @@ const EmployeesList = () => {
       label: 'Delete',
       onClick: (employee: Employee) => handleDelete(employee._id),
       className: 'text-danger',
-      condition: () => !!auth?.hasRole && auth.hasRole('admin'),
+      condition: () => !!auth?.can && auth.can('manageEmployees'),
     },
   ];
 
@@ -107,7 +108,7 @@ const EmployeesList = () => {
       </div>
 
       <p className="muted mt-4">
-        Signed in as: {auth?.user?.name} ({auth?.user?.role})
+        Signed in as: {auth?.user?.name} ({formatRole(auth?.user?.role)})
       </p>
     </PageContainer>
   );
