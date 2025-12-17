@@ -3,7 +3,7 @@ import api from '../utils/api';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Button, Input } from '../components/ui';
+import { Button, Input, CenteredCard } from '../components/ui';
 import type { AuthLoginResponse } from '@hr/shared';
 import { safeSetItem } from '../utils/storage';
 import { getAndClearPostLoginRedirect } from '../utils/authRedirect';
@@ -56,7 +56,7 @@ const Login = () => {
 
   return (
     <PageContainer>
-      <div className="card w-full max-w-md mx-auto p-6">
+      <CenteredCard>
         <h2 className="text-2xl font-semibold mb-4">Login</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -70,7 +70,7 @@ const Login = () => {
             <Button type="submit" variant="primary" loading={loading}>Login</Button>
           </div>
         </form>
-      </div>
+      </CenteredCard>
     </PageContainer>
   );
 };

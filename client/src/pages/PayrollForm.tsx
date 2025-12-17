@@ -1,6 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import PageContainer from '../components/layout/PageContainer';
+import { FormCard } from '../components/ui';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
@@ -112,7 +113,8 @@ const PayrollForm = () => {
 
   return (
     <PageContainer>
-      <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="">
+        <FormCard>
           <h1 className="text-2xl font-bold mb-4">{isEdit ? 'Edit' : 'Create'} Payroll Entry</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}
@@ -143,7 +145,8 @@ const PayrollForm = () => {
             <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
             <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
-        </form>
+        </FormCard>
+      </form>
     </PageContainer>
   );
 };

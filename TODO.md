@@ -12,7 +12,7 @@
   - etc.
  - [x] Replace legacy imports across the client (switched to barrel where applicable)
  - [x] Remove inline styles and magic strings (fixed several invalid CSS var usages)
- - [ ] Deduplicate repeated markup into reusable components
+ - [x] Deduplicate repeated markup into reusable components
 
 ---
 

@@ -5,7 +5,7 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
-import { Input, Select, Label, Checkbox } from '../components/ui';
+import { Input, Select, Label, Checkbox, FormCard } from '../components/ui';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
@@ -147,7 +147,8 @@ const EmployeeForm = () => {
 
   return (
     <PageContainer>
-      <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="">
+        <FormCard>
           <h1 className="text-2xl font-bold mb-2">{isEdit ? 'Edit' : 'Create'} Employee</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}
@@ -191,7 +192,8 @@ const EmployeeForm = () => {
             <button type="button" className="btn" onClick={() => navigate(-1)} disabled={saving}>Cancel</button>
             <button type="submit" className="btn" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </div>
-        </form>
+        </FormCard>
+      </form>
     </PageContainer>
   );
 };

@@ -6,3 +6,5 @@ export { default as Card } from './Card';
 export { default as Checkbox } from './Checkbox';
 export { default as Label } from './Label';
 export { default as Dialog } from './Dialog';
+export { default as FormCard } from './FormCard';
+export { default as CenteredCard } from './CenteredCard';
