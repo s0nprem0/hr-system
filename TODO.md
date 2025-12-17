@@ -3,16 +3,16 @@
 ## 🚨 High Priority (Blockers / Core Quality)
 
 ### 1. UI Primitives Consolidation
-- [ ] Create a single UI barrel (`components/ui/index.ts`)
-- [ ] Unify styles and APIs for shared components:
+- [x] Create a single UI barrel (`components/ui/index.ts`)
+- [x] Unify styles and APIs for shared components:
   - `Button`
   - `Input`
   - `Select`
   - `Textarea`
   - etc.
-- [ ] Replace legacy imports across the client
-- [ ] Remove inline styles and magic strings
-- [ ] Deduplicate repeated markup into reusable components
+ - [x] Replace legacy imports across the client (switched to barrel where applicable)
+ - [x] Remove inline styles and magic strings (fixed several invalid CSS var usages)
+ - [ ] Deduplicate repeated markup into reusable components
 
 ---
 

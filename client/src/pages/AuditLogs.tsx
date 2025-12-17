@@ -4,10 +4,7 @@ import { DataTable, type Column } from '../components/DataTable';
 import api from '../utils/api';
 import { PageHeader } from '../components/PageHeader';
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Button from '../components/ui/Button';
-import Dialog from '../components/ui/Dialog';
+import { Input, Select, Button, Dialog } from '../components/ui';
 import { Pagination } from '../components/Pagination';
 
 interface AuditLogRow {

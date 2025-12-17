@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
-import Button from './ui/Button';
-import Card from './ui/Card';
+import { Button, Card } from './ui';
 
 export interface Column<T = object> {
   key: string;
