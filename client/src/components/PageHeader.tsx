@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
 import { Button, Input } from './ui';
-import { Plus, Search } from 'lucide-react';
 
 export interface PageHeaderProps {
   title: string;
@@ -25,21 +24,16 @@ export function PageHeader({ title, addButton, search, children }: PageHeaderPro
       </div>
       <div className="flex items-center gap-3">
         {search && (
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--cp-muted)" />
-            <Input
-              value={search.value}
-              onChange={(e) => search.onChange(e.target.value)}
-              placeholder={search.placeholder || 'Search'}
-              className="w-64 pl-10"
-            />
-          </div>
+          <Input
+            value={search.value}
+            onChange={(e) => search.onChange(e.target.value)}
+            placeholder={search.placeholder || 'Search'}
+            className="w-64"
+          />
         )}
         {addButton && (
           <Link to={addButton.to}>
-            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-              {addButton.text}
-            </Button>
+            <Button variant="primary">{addButton.text}</Button>
           </Link>
         )}
         {children}

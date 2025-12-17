@@ -1,116 +1,42 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { redirectToLogin } from '../utils/authRedirect';import { LayoutDashboard, Users, Building2, DollarSign, FileText, UserCircle, LogOut } from 'lucide-react';import { useState, useRef, useEffect } from 'react';
+import { redirectToLogin } from '../utils/authRedirect';
+import { LogOut, Menu } from 'lucide-react';
+import { useState } from 'react';
 
 const Navbar = () => {
   const auth = useAuth();
+  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
-  const [userMenu, setUserMenu] = useState(false)
-  const menuRef = useRef<HTMLDivElement | null>(null)
-  const userRef = useRef<HTMLDivElement | null>(null)
+  const handleLogout = () => {
+    auth?.logout();
+    redirectToLogin(navigate);
+  };
 
-  // Close menus when clicking outside or pressing Escape
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setOpen(false)
-        setUserMenu(false)
-      }
-    }
-    function onDocClick(e: MouseEvent) {
-      const target = e.target as Node
-      if (userRef.current && !userRef.current.contains(target)) {
-        setUserMenu(false)
-      }
-      if (menuRef.current && !menuRef.current.contains(target)) {
-        // keep mobile menu closed when clicking outside
-        setOpen(false)
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('click', onDocClick)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.removeEventListener('click', onDocClick)
-    }
-  }, [])
+  if (!auth?.user) return null;
 
   return (
-    <header className="w-full app-header sticky top-0 z-20">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14">
-          <NavLink to={auth?.user ? '/dashboard' : '/'} className="text-lg font-semibold">HR System</NavLink>
-          <nav className="flex items-center gap-3">
-            <button
-              className="md:hidden btn"
-              aria-label="Toggle menu"
-              onClick={() => setOpen(!open)}
-            >
-              {open ? 'Close' : 'Menu'}
-            </button>
-            <div ref={menuRef} className={`${open ? 'block' : 'hidden'} md:flex md:items-center md:gap-3`}
-            >
-            {auth?.loading ? (
-              <div className="muted">Loading...</div>
-            ) : auth?.user ? (
-              <>
-                <NavLink to="/dashboard" className={({isActive}) => isActive ? 'muted font-semibold' : 'muted'}>Dashboard</NavLink>
-                {/* Role-based links */}
-                {/** Render links with disabled styling when permission missing */}
-                {auth?.can ? (
-                  <>
-                    {auth.can('manageUsers') ? (
-                      <NavLink onClick={() => setOpen(false)} to="/users" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Users</NavLink>
-                    ) : (
-                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Users</span>
-                    )}
+    <header className="fixed top-0 left-0 right-0 h-16 bg-(--cp-surface) border-b border-(--cp-border) z-10 md:left-64">
+      <div className="h-full px-6 flex items-center justify-between">
+        <button
+          className="md:hidden btn p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
 
-                    {auth.can('manageEmployees') ? (
-                      <NavLink onClick={() => setOpen(false)} to="/employees" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Employees</NavLink>
-                    ) : (
-                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Employees</span>
-                    )}
+        <div className="flex-1"></div>
 
-                    {auth.can('manageDepartments') ? (
-                      <NavLink onClick={() => setOpen(false)} to="/departments" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Departments</NavLink>
-                    ) : (
-                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Departments</span>
-                    )}
-
-                    {auth.can('managePayroll') ? (
-                      <NavLink onClick={() => setOpen(false)} to="/payroll" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Payroll</NavLink>
-                    ) : (
-                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Payroll</span>
-                    )}
-                    {auth.can('viewAuditLogs') ? (
-                      <NavLink onClick={() => setOpen(false)} to="/audits" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Audit Logs</NavLink>
-                    ) : (
-                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Audit Logs</span>
-                    )}
-                  </>
-                ) : null}
-
-                <NavLink onClick={() => setOpen(false)} to="/profile" className={({isActive}) => isActive ? 'muted font-semibold' : 'muted'}>Profile</NavLink>
-
-                <div ref={userRef} className="relative">
-                  <button className="muted" aria-haspopup="true" aria-expanded={userMenu} onClick={() => setUserMenu(!userMenu)}>
-                    {auth.user.name}
-                  </button>
-                  {userMenu && (
-                    <div role="menu" aria-label="User menu" className="absolute right-0 mt-2 bg-white shadow rounded p-2">
-                      <NavLink onClick={() => { setUserMenu(false); setOpen(false) }} to="/profile" className="block px-2 py-1">Profile</NavLink>
-                      <button className="block px-2 py-1 w-full text-left" onClick={() => { setUserMenu(false); auth.logout(); redirectToLogin(navigate) }}>Logout</button>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <NavLink to="/login" className={({isActive}) => isActive ? 'btn font-semibold' : 'btn'}>Login</NavLink>
-            )}
-            </div>
-          </nav>
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex flex-col items-end">
+            <span className="font-medium text-sm">{auth.user.name}</span>
+            <span className="text-xs muted">{auth.user.role}</span>
+          </div>
+          <button onClick={handleLogout} className="btn flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            <span className="hidden md:inline">Logout</span>
+          </button>
         </div>
       </div>
     </header>

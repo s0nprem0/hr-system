@@ -15,14 +15,20 @@ import Profile from './pages/Profile';
 import AuditLogs from './pages/AuditLogs';
 import PrivateRoutes from './utils/PrivateRoutes';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import Unauthorized from './pages/Unauthorized';
+import { useAuth } from './context/AuthContext';
 
 function App() {
+  const auth = useAuth();
+  const isAuthenticated = !!auth?.user;
+
   return (
     <BrowserRouter>
-      <Navbar />
-      <main className="py-8">
-        <div className="container-main">
+      {isAuthenticated && <Sidebar />}
+      {isAuthenticated && <Navbar />}
+      <main className={isAuthenticated ? 'md:ml-64 pt-16' : ''}>
+        <div className={isAuthenticated ? 'p-6' : ''}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
