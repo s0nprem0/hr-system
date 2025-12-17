@@ -6,8 +6,7 @@ import { isValidMongoId } from '../utils/validators'
 import { useToast } from '../context/ToastContext'
 import { Input, Select, Checkbox, Button, FormCard } from '../components/ui'
 import PageContainer from '../components/layout/PageContainer'
-
-type Role = 'admin' | 'hr' | 'employee'
+import type { Role } from '../context/AuthPermissions'
 type User = {
 	_id: string
 	name?: string

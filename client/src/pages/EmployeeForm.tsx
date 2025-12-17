@@ -6,6 +6,7 @@ import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
 import { Input, Select, Label, Checkbox, FormCard } from '../components/ui';
+import type { Role } from '../context/AuthPermissions';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const EmployeeForm = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'hr' | 'employee'>('employee');
+  const [role, setRole] = useState<Role>('employee');
   const [departmentId, setDepartmentId] = useState<string | undefined>(undefined);
   const [active, setActive] = useState(true);
 

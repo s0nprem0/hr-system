@@ -76,10 +76,10 @@
 ---
 
 ### 8. Remove Remaining UI Anti-Patterns
-- [ ] Replace inline styles
-- [ ] Remove duplicated layouts and markup
-- [ ] Eliminate hardcoded role strings
-- [ ] Prefer shared components and helpers
+ - [x] Replace inline styles
+ - [x] Remove duplicated layouts and markup
+ - [x] Eliminate hardcoded role strings
+ - [x] Prefer shared components and helpers
 
 ---
 
