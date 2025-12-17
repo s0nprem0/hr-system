@@ -75,7 +75,7 @@ export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={cn('relative z-10 w-full max-w-lg bg-surface border border-border rounded-md shadow-lg p-6')}
+        className={cn('relative z-10 w-full max-w-lg bg-(--cp-surface) border-(--cp-border) rounded-md shadow-lg p-6')}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
@@ -89,7 +89,7 @@ export const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, children
           ) : (
             <div />
           )}
-          <Button onClick={onClose} variant="ghost">Close</Button>
+          <Button onClick={onClose} variant="ghost" aria-label="Close dialog">Close</Button>
         </div>
         <div className="mt-4">{children}</div>
       </div>
