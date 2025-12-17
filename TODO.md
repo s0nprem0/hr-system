@@ -17,9 +17,9 @@
 ---
 
 ### 2. TypeScript Hardening
-- [ ] Tighten types in `shared/src`
-- [ ] Tighten API request/response types
-- [ ] Harden component prop types
+- [x] Tighten types in `shared/src`
+- [x] Tighten API request/response types
+- [x] Harden component prop types
 - [ ] Incrementally enable `strict`
 - [ ] Remove `any`, unsafe unions, and implicit `null | undefined`
 

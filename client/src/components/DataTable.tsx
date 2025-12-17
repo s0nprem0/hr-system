@@ -2,19 +2,20 @@ import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
 import { Button, Card } from './ui';
 import type { JSONValue } from '../types/json';
+import { Inbox } from 'lucide-react';
 
 function getCellValue<T extends object>(item: T, key: keyof T): JSONValue | undefined {
   return (item as unknown as Record<string, JSONValue>)[String(key)];
 }
 
-export interface Column<T = object> {
+export interface Column<T extends object = object> {
   key: keyof T & string;
   header: string;
   render?: (item: T) => ReactNode;
   className?: string;
 }
 
-export interface Action<T = object> {
+export interface Action<T extends object = object> {
   label: string;
   onClick?: (item: T) => void;
   to?: string | ((item: T) => string);
@@ -39,8 +40,11 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
-      <Card className="text-center py-8 text-(--cp-muted)">
-        {emptyMessage}
+      <Card className="text-center py-12">
+        <div className="flex flex-col items-center gap-3">
+          <Inbox className="w-12 h-12 text-(--cp-muted) opacity-50" />
+          <p className="text-(--cp-muted) text-sm">{emptyMessage}</p>
+        </div>
       </Card>
     );
   }

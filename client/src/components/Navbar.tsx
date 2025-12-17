@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { redirectToLogin } from '../utils/authRedirect';
-import { useState, useRef, useEffect } from 'react';
+import { redirectToLogin } from '../utils/authRedirect';import { LayoutDashboard, Users, Building2, DollarSign, FileText, UserCircle, LogOut } from 'lucide-react';import { useState, useRef, useEffect } from 'react';
 
 const Navbar = () => {
   const auth = useAuth();

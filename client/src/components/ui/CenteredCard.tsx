@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Card from './Card';
 
 export interface CenteredCardProps {
-  children?: ReactNode;
+  children: ReactNode;
   className?: string;
 }
 
