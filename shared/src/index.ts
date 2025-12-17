@@ -1,9 +1,11 @@
 // Shared TypeScript API types for client and server
 
+export type Role = 'admin' | 'hr' | 'employee';
+
 export interface UserDTO {
   _id: string;
   name: string;
-  role: 'admin' | 'hr' | 'employee';
+  role: Role;
 }
 
 export interface AuthLoginRequest {
@@ -44,7 +46,7 @@ export interface EmployeeDTO {
   name: string;
   email: string;
   departmentId?: string | null;
-  role?: string;
+  role?: Role;
 }
 
 export interface PayrollDTO {

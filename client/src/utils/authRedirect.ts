@@ -1,4 +1,5 @@
 import { safeGetItem, safeSetItem, safeRemoveItem } from './storage';
+import type { NavigateFunction } from 'react-router-dom';
 
 const REDIRECT_KEY = 'postLoginRedirect';
 
@@ -20,7 +21,7 @@ export function getAndClearPostLoginRedirect(): string | null {
   }
 }
 
-export function redirectToLogin(navigate?: (to: string, opts?: any) => void, currentPath?: string) {
+export function redirectToLogin(navigate?: NavigateFunction, currentPath?: string) {
   const path = currentPath ?? (typeof window !== 'undefined' ? window.location.pathname + (window.location.search || '') : '/');
   setPostLoginRedirect(path);
   if (navigate) {
