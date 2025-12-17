@@ -26,7 +26,7 @@ const Departments = () => {
     handleDelete,
   } = useDataList<Department>({
     endpoint: '/api/departments',
-    pageSize: 25,
+    pageSize: 15,
     deleteConfirmMessage: 'Delete this department? This will not remove employees.',
     deleteSuccessMessage: 'Department deleted',
   });

@@ -28,7 +28,7 @@ const Users = () => {
     handleDelete,
   } = useDataList<User>({
     endpoint: '/api/users',
-    pageSize: 20,
+    pageSize: 15,
     deleteConfirmMessage: 'Delete user? This action cannot be undone.',
     deleteSuccessMessage: 'User deleted',
   });

@@ -25,12 +25,20 @@ router.get(
 );
 
 // Create payroll entry - hr only
+// Create payroll entry - hr only
 router.post(
   '/',
   verifyUser,
   requirePermission('managePayroll'),
   body('employeeId').isMongoId().withMessage('employeeId must be a valid id'),
-  body('amount').isFloat({ gt: 0 }).withMessage('amount must be a positive number'),
+  // require either `gross` or legacy `amount` and validate it's a positive number (accept numeric strings)
+  body().custom((v, { req }) => {
+    const val = req.body.gross ?? req.body.amount;
+    if (val === undefined || val === null) throw new Error('gross or amount is required');
+    const num = Number(val);
+    if (!Number.isFinite(num) || num <= 0) throw new Error('gross or amount must be a positive number');
+    return true;
+  }),
   body('payDate').optional().isISO8601().withMessage('payDate must be a valid date'),
   validationHandler,
   createPayroll
@@ -54,6 +62,7 @@ router.put(
   param('id').isMongoId().withMessage('Invalid payroll id'),
   body('employeeId').optional().isMongoId(),
   body('amount').optional().isFloat({ gt: 0 }),
+  body('gross').optional().isFloat({ gt: 0 }),
   body('payDate').optional().isISO8601(),
   validationHandler,
   updatePayroll

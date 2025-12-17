@@ -33,7 +33,7 @@ const EmployeesList = () => {
     handleDelete,
   } = useDataList<Employee>({
     endpoint: '/api/employees',
-    pageSize: 20,
+    pageSize: 8,
     deleteConfirmMessage: 'Delete this employee? This action cannot be undone.',
     deleteSuccessMessage: 'Employee deleted',
   });
@@ -50,6 +50,7 @@ const EmployeesList = () => {
     {
       key: 'role',
       header: 'Role',
+      render: (employee) => formatRole(employee.role),
     },
     {
       key: 'active',
@@ -107,10 +108,6 @@ const EmployeesList = () => {
           />
         </LoadingErrorWrapper>
       </div>
-
-      <p className="muted mt-4">
-        Signed in as: {auth?.user?.name} ({formatRole(auth?.user?.role)})
-      </p>
     </PageContainer>
   );
 };

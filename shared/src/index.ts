@@ -81,6 +81,8 @@ export interface PayrollDTO {
   periodEnd: string; // ISO date
   gross: number;
   net: number;
+  payDate?: string;
+  tax?: number;
 }
 
 export default {};

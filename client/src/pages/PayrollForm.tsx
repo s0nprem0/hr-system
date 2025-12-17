@@ -19,7 +19,7 @@ const PayrollForm = () => {
   const params = useParams();
   const isEdit = !!params.id;
   const [employeeId, setEmployeeId] = useState<string>('');
-  const [amount, setAmount] = useState<string>('');
+  const [gross, setGross] = useState<string>('');
   const [payDate, setPayDate] = useState<string>('');
   const [employees, setEmployees] = useState<EmployeeShort[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ const PayrollForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const employeeRef = useRef<HTMLSelectElement | null>(null);
-  const amountRef = useRef<HTMLInputElement | null>(null);
+  const grossRef = useRef<HTMLInputElement | null>(null);
 
   const toast = useToast();
 
@@ -56,7 +56,7 @@ const PayrollForm = () => {
         if (r?.success) {
           const p = r.data;
           setEmployeeId(p?.employeeId || '');
-          setAmount(p?.net != null ? String(p.net) : '');
+          setGross(p?.gross != null ? String(p.gross) : '');
           setPayDate(p?.periodStart ? new Date(p.periodStart).toISOString().slice(0, 10) : '');
         } else {
           throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load payroll');
@@ -78,19 +78,20 @@ const PayrollForm = () => {
     setFormErrors({});
     const errs: Record<string, string> = {};
     if (!employeeId) errs.employeeId = 'Employee is required';
-    if (!amount || Number.isNaN(Number(amount))) errs.amount = 'Valid amount is required';
+    if (!gross || Number.isNaN(Number(gross))) errs.gross = 'Valid gross amount is required';
     if (Object.keys(errs).length) {
       setFormErrors(errs);
       const first = Object.keys(errs)[0];
       if (first === 'employeeId') employeeRef.current?.focus();
-      if (first === 'amount') amountRef.current?.focus();
+      if (first === 'gross') grossRef.current?.focus();
       return;
     }
     setSaving(true);
     try {
-      const payload: { employeeId: string; amount: number; payDate?: string } = {
+      const payload: { employeeId: string; gross: number; periodStart?: string; payDate?: string } = {
         employeeId,
-        amount: Number(amount),
+        gross: Number(gross),
+        periodStart: payDate || undefined,
         payDate: payDate || undefined,
       };
       if (isEdit && params.id) {
@@ -113,7 +114,7 @@ const PayrollForm = () => {
         setFormErrors(fe);
         const first = Object.keys(fe)[0];
         if (first === 'employeeId') employeeRef.current?.focus();
-        if (first === 'amount') amountRef.current?.focus();
+        if (first === 'gross') grossRef.current?.focus();
         setError(apiErr.message || 'Validation failed');
       } else {
         setError(apiErr.message);
@@ -143,9 +144,9 @@ const PayrollForm = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Amount</label>
-            <input ref={amountRef} aria-invalid={!!formErrors.amount} aria-describedby={formErrors.amount ? 'amount-error' : undefined} className="input" value={amount} onChange={(e) => { setAmount(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.amount; return c; }); }} type="number" step="0.01" />
-            {formErrors.amount && <div id="amount-error" className="text-sm text-danger mt-1">{formErrors.amount}</div>}
+            <label className="block text-sm font-medium">Gross</label>
+            <input ref={grossRef} aria-invalid={!!formErrors.gross} aria-describedby={formErrors.gross ? 'gross-error' : undefined} className="input" value={gross} onChange={(e) => { setGross(e.target.value); setFormErrors((s)=>{ const c = { ...s }; delete c.gross; return c; }); }} type="number" step="0.01" />
+            {formErrors.gross && <div id="gross-error" className="text-sm text-danger mt-1">{formErrors.gross}</div>}
           </div>
 
           <div>

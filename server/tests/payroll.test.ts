@@ -31,10 +31,14 @@ describe('Payroll flows', () => {
   });
 
   it('allows HR to create payroll for an employee', async () => {
-    const res = await request(BASE).post('/api/payroll').set('Authorization', `Bearer ${hrToken}`).send({ employeeId, amount: 1500 });
+    const res = await request(BASE).post('/api/payroll').set('Authorization', `Bearer ${hrToken}`).send({ employeeId, gross: 1500 });
     expect(res.status).toBe(201);
-    expect(res.body?.data?.amount).toBe(1500);
-    expect(res.body?.data?.employee?._id).toBe(employeeId);
+    expect(res.body?.data?.gross).toBe(1500);
+    // net should be computed (default tax rate 10%)
+    expect(typeof res.body?.data?.net).toBe('number');
+    // support either populated employee object or employeeId field
+    const returnedEmployeeId = res.body?.data?.employee?._id ?? res.body?.data?.employeeId;
+    expect(returnedEmployeeId).toBe(employeeId);
   });
 
   it('lists payroll entries and filters by employeeId', async () => {

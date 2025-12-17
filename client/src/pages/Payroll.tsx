@@ -7,7 +7,10 @@ import PageContainer from '../components/layout/PageContainer';
 
 type PayrollEntry = {
   _id: string;
-  amount: number;
+  gross: number;
+  net: number;
+  periodStart?: string;
+  periodEnd?: string;
   payDate?: string;
   employee?: { _id: string; name?: string; email?: string } | null;
 };
@@ -26,7 +29,7 @@ const Payroll = () => {
     handleDelete,
   } = useDataList<PayrollEntry>({
     endpoint: '/api/payroll',
-    pageSize: 20,
+    pageSize: 8,
     deleteConfirmMessage: 'Delete this payroll entry?',
     deleteSuccessMessage: 'Payroll entry deleted',
   });
@@ -38,14 +41,19 @@ const Payroll = () => {
       render: (entry) => entry.employee ? `${entry.employee.name || entry.employee.email || '—'}` : '—',
     },
     {
-      key: 'amount',
-      header: 'Amount',
-      render: (entry) => entry.amount?.toFixed ? entry.amount.toFixed(2) : entry.amount,
+      key: 'gross',
+      header: 'Gross',
+      render: (entry) => typeof entry.gross === 'number' ? entry.gross.toFixed(2) : '—',
+    },
+    {
+      key: 'net',
+      header: 'Net',
+      render: (entry) => typeof entry.net === 'number' ? entry.net.toFixed(2) : '—',
     },
     {
       key: 'payDate',
-      header: 'Pay Date',
-      render: (entry) => entry.payDate ? new Date(entry.payDate).toLocaleDateString() : '-',
+      header: 'Period Start',
+      render: (entry) => entry.periodStart ? new Date(entry.periodStart).toLocaleDateString() : '-',
     },
   ];
 
