@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../utils/api';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
+import { handleUnauthorized as handleUnauthorizedHelper } from '../utils/authRedirect';
 
 // Define types
 import type { Role } from './AuthPermissions';
@@ -116,18 +117,8 @@ export function usePermissions() {
 }
 
 export function handleUnauthorized(redirectFn?: (path: string) => void) {
-    try {
-        safeRemoveItem('token');
-        safeRemoveItem('refreshToken');
-    } catch {
-        // ignore
-    }
-    // Note: not changing any React state here; the context's listener calls this helper and also clears state via its closure.
-    if (redirectFn) {
-        redirectFn('/login');
-    } else if (typeof window !== 'undefined' && typeof window.location?.replace === 'function') {
-        window.location.replace('/login');
-    }
+    // Keep a small shim to preserve the previous API used inside the context.
+    return handleUnauthorizedHelper(redirectFn);
 }
 
 export default AuthContext;

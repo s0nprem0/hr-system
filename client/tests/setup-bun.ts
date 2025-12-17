@@ -41,7 +41,20 @@ if (typeof globalThis.CustomEvent === 'undefined') {
   }
 }
 
-if (typeof globalThis.Storage === 'undefined' || typeof globalThis.localStorage === 'undefined') {
+// If the environment lacks a proper Storage implementation or provides an incomplete
+// implementation (e.g. Bun's partial `localStorage` in some test modes), replace
+// it with a lightweight in-memory TestStorage that matches the web API.
+const needsStoragePolyfill = (() => {
+  try {
+    const ls = (globalThis as any).localStorage;
+    if (!ls) return true;
+    return typeof ls.getItem !== 'function' || typeof ls.setItem !== 'function' || typeof ls.removeItem !== 'function';
+  } catch {
+    return true;
+  }
+})();
+
+if (needsStoragePolyfill) {
   class TestStorage {
     private store = new Map<string, string>()
     get length() { return this.store.size }

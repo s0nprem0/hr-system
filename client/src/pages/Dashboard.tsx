@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { formatRole } from '../context/AuthPermissions';
 import { useNavigate, Link } from 'react-router-dom';
+import { redirectToLogin } from '../utils/authRedirect';
 import PageContainer from '../components/layout/PageContainer';
 
 const Dashboard = () => {
@@ -9,7 +10,7 @@ const Dashboard = () => {
 
   const logout = () => {
     auth?.logout();
-    navigate('/login');
+    redirectToLogin(navigate);
   };
 
   const canManageEmployees = auth?.can?.("manageEmployees") ?? false;

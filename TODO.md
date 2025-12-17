@@ -26,10 +26,10 @@
 ---
 
 ### 3. Auth Redirect Centralization
-- [ ] Complete router-based redirects in `AuthContext`
-- [ ] Fully wire `handleUnauthorized`
-- [ ] Remove page-level auth redirect logic
-- [ ] Ensure consistent behavior on refresh / expired sessions
+- [x] Complete router-based redirects in `AuthContext`
+- [x] Fully wire `handleUnauthorized`
+- [x] Remove page-level auth redirect logic
+- [x] Ensure consistent behavior on refresh / expired sessions
 
 ---
 

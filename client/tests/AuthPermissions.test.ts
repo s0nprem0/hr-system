@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { getPermissions, PERMISSIONS_MAP } from '../src/context/AuthPermissions';
 
 describe('AuthPermissions', () => {

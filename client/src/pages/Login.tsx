@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { Button, Input } from '../components/ui';
 import type { AuthLoginResponse } from '@hr/shared';
 import { safeSetItem } from '../utils/storage';
+import { getAndClearPostLoginRedirect } from '../utils/authRedirect';
 import PageContainer from '../components/layout/PageContainer';
 
 const Login = () => {
@@ -30,8 +31,9 @@ const Login = () => {
           safeSetItem('refreshToken', payload.refreshToken);
           auth?.login(payload.user, payload.token);
         }
-        // Redirect to unified dashboard
-        navigate('/dashboard');
+        // Redirect to the originally requested path, or fallback to dashboard
+        const dest = getAndClearPostLoginRedirect() || '/dashboard';
+        navigate(dest);
       } else {
         setError(res.data?.error?.message || res.data?.error || 'Login failed');
       }

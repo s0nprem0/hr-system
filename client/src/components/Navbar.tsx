@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { redirectToLogin } from '../utils/authRedirect';
 import { useState, useRef, useEffect } from 'react';
 
 const Navbar = () => {
@@ -99,7 +100,7 @@ const Navbar = () => {
                   {userMenu && (
                     <div role="menu" aria-label="User menu" className="absolute right-0 mt-2 bg-white shadow rounded p-2">
                       <NavLink onClick={() => { setUserMenu(false); setOpen(false) }} to="/profile" className="block px-2 py-1">Profile</NavLink>
-                      <button className="block px-2 py-1 w-full text-left" onClick={() => { setUserMenu(false); auth.logout(); navigate('/login') }}>Logout</button>
+                      <button className="block px-2 py-1 w-full text-left" onClick={() => { setUserMenu(false); auth.logout(); redirectToLogin(navigate) }}>Logout</button>
                     </div>
                   )}
                 </div>
