@@ -3,7 +3,6 @@ import { sendSuccess } from '../utils/apiResponse';
 import { login, verify, register, refresh, logout } from '../controllers/authController';
 import verifyUser from '../middleware/authMiddleware';
 import requirePermission from '../middleware/requirePermission';
-import loginRateLimiter from '../middleware/rateLimit';
 import { body } from 'express-validator';
 import validationHandler from '../middleware/validationHandler';
 
@@ -27,7 +26,6 @@ router.post(
 		body('email').isEmail().withMessage('Valid email required'),
 		body('password').notEmpty().withMessage('Password is required'),
 	],
-	loginRateLimiter,
 	validationHandler,
 	login,
 );

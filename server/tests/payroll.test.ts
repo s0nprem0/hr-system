@@ -9,9 +9,11 @@ describe('Payroll flows', () => {
   let employeeId: string;
 
   beforeAll(async () => {
-    const login = await request(BASE).post('/api/auth/login').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
-    expect(login.status).toBe(200);
-    adminToken = login.body?.data?.token;
+    adminToken = process.env.ADMIN_TOKEN || (await (async () => {
+      const login = await request(BASE).post('/api/auth/login').set('x-skip-rate-limit','1').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
+      expect(login.status).toBe(200);
+      return login.body?.data?.token;
+    })());
 
     // create an HR user
     const createHr = await request(BASE).post('/api/employees').set('Authorization', `Bearer ${adminToken}`).send({ name: 'HR User', email: hrCreds.email, password: hrCreds.password, role: 'hr' });
@@ -23,7 +25,7 @@ describe('Payroll flows', () => {
     employeeId = createEmp.body?.data?._id;
 
     // login as HR
-    const hrLogin = await request(BASE).post('/api/auth/login').send({ email: hrCreds.email, password: hrCreds.password });
+    const hrLogin = await request(BASE).post('/api/auth/login').set('x-skip-rate-limit','1').send({ email: hrCreds.email, password: hrCreds.password });
     expect(hrLogin.status).toBe(200);
     hrToken = hrLogin.body?.data?.token;
   });

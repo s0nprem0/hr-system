@@ -7,9 +7,11 @@ describe('Employees CRUD', () => {
   let empId: string;
 
   beforeAll(async () => {
-    const login = await request(BASE).post('/api/auth/login').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
-    expect(login.status).toBe(200);
-    adminToken = login.body?.data?.token;
+    adminToken = process.env.ADMIN_TOKEN || (await (async () => {
+      const login = await request(BASE).post('/api/auth/login').set('x-skip-rate-limit','1').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
+      expect(login.status).toBe(200);
+      return login.body?.data?.token;
+    })());
   });
 
   it('creates an employee (admin)', async () => {

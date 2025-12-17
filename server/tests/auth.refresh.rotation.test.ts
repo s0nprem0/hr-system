@@ -4,7 +4,7 @@ const BASE = process.env.TEST_SERVER_URL || 'http://localhost:5000';
 
 describe('Refresh token rotation and logout', () => {
   it('rotates refresh token and invalidates old token', async () => {
-    const loginRes = await request(BASE).post('/api/auth/login').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
+    const loginRes = await request(BASE).post('/api/auth/login').set('x-skip-rate-limit','1').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
     expect(loginRes.status).toBe(200);
     const oldRefresh = loginRes.body?.data?.refreshToken;
     expect(oldRefresh).toBeTruthy();
@@ -22,10 +22,13 @@ describe('Refresh token rotation and logout', () => {
   });
 
   it('logout revokes the refresh token', async () => {
-    const loginRes = await request(BASE).post('/api/auth/login').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
-    expect(loginRes.status).toBe(200);
-    const refreshToken = loginRes.body?.data?.refreshToken;
-    expect(refreshToken).toBeTruthy();
+      // Prefer seeded refresh token to avoid repeated login requests
+      const refreshToken = process.env.ADMIN_REFRESH || (await (async () => {
+        const loginRes = await request(BASE).post('/api/auth/login').set('x-skip-rate-limit','1').send({ email: process.env.ADMIN_EMAIL || 'admin@gmail.com', password: process.env.ADMIN_PASSWORD || 'admin123' });
+        expect(loginRes.status).toBe(200);
+        return loginRes.body?.data?.refreshToken;
+      })());
+      expect(refreshToken).toBeTruthy();
 
     // Logout should revoke the token
     const logoutRes = await request(BASE).post('/api/auth/logout').send({ refreshToken });
