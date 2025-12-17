@@ -42,7 +42,7 @@ const Navbar = () => {
     <header className="w-full app-header sticky top-0 z-20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
-          <NavLink to="/" className="text-lg font-semibold">HR System</NavLink>
+          <NavLink to={auth?.user ? '/dashboard' : '/'} className="text-lg font-semibold">HR System</NavLink>
           <nav className="flex items-center gap-3">
             <button
               className="md:hidden btn"
@@ -53,7 +53,9 @@ const Navbar = () => {
             </button>
             <div ref={menuRef} className={`${open ? 'block' : 'hidden'} md:flex md:items-center md:gap-3`}
             >
-            {auth?.user ? (
+            {auth?.loading ? (
+              <div className="muted">Loading...</div>
+            ) : auth?.user ? (
               <>
                 <NavLink to="/dashboard" className={({isActive}) => isActive ? 'muted font-semibold' : 'muted'}>Dashboard</NavLink>
                 {/* Role-based links */}

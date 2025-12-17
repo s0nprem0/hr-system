@@ -32,7 +32,11 @@ const Login = () => {
           auth?.login(payload.user, payload.token);
         }
         // Redirect to the originally requested path, or fallback to dashboard
-        const dest = getAndClearPostLoginRedirect() || '/dashboard';
+        let dest = getAndClearPostLoginRedirect() || '/dashboard';
+        // If the saved redirect points back to the login page, ignore it.
+        if (dest === '/login' || dest.startsWith('/login?')) {
+          dest = '/dashboard';
+        }
         navigate(dest);
       } else {
         setError(res.data?.error?.message || res.data?.error || 'Login failed');
