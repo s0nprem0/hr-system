@@ -18,15 +18,17 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Unauthorized from './pages/Unauthorized';
 import { useAuth } from './context/AuthContext';
+import { useState } from 'react';
 
 function App() {
   const auth = useAuth();
   const isAuthenticated = !!auth?.user;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <BrowserRouter>
-      {isAuthenticated && <Sidebar />}
-      {isAuthenticated && <Navbar />}
+      {isAuthenticated && <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
+      {isAuthenticated && <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />}
       <main className={isAuthenticated ? 'md:ml-64 pt-16' : ''}>
         <div className={isAuthenticated ? 'p-6' : ''}>
           <Routes>
