@@ -1,7 +1,12 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import Card from './Card';
 
-const CenteredCard: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = '' }) => {
+export interface CenteredCardProps {
+  children?: ReactNode;
+  className?: string;
+}
+
+const CenteredCard = ({ children, className = '' }: CenteredCardProps) => {
   return (
     <Card className={`card w-full max-w-md mx-auto p-6 ${className}`}>
       {children}

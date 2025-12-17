@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
 import { Button, Input } from './ui';
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
   title: string;
   addButton?: {
     to: string;

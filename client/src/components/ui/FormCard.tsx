@@ -1,7 +1,12 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import Card from './Card';
 
-const FormCard: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = '' }) => {
+export interface FormCardProps {
+  children?: ReactNode;
+  className?: string;
+}
+
+const FormCard = ({ children, className = '' }: FormCardProps) => {
   return (
     <Card className={`card space-y-4 max-w-3xl mx-auto ${className}`}>
       {children}
