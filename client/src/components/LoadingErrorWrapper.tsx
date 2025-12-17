@@ -14,11 +14,11 @@ export function LoadingErrorWrapper({
   loadingMessage = 'Loading...'
 }: LoadingErrorWrapperProps) {
   if (loading) {
-    return <div className="muted">{loadingMessage}</div>;
+    return <div role="status" className="muted py-4">{loadingMessage}</div>;
   }
 
   if (error) {
-    return <div className="text-danger">{error}</div>;
+    return <div role="alert" className="text-(--cp-danger) py-4">{error}</div>;
   }
 
   return <>{children}</>;
