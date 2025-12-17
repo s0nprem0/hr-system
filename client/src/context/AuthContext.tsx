@@ -93,7 +93,9 @@ export function AuthContext({ children }: { children: ReactNode }) {
         verifyUser();
         // Listen for global unauthorized events emitted by the API layer
         const onUnauthorized = () => {
-            // use the exported handler so tests can call it directly
+            // Clear local auth state and call shared helper to clear storage + redirect.
+            setUser(null);
+            setLoading(false);
             handleUnauthorized();
         };
         window.addEventListener('auth:unauthorized', onUnauthorized as EventListener);
