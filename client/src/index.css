@@ -1,52 +1,5 @@
 @import "tailwindcss";
-
-/* -------------------------------
-   DESIGN TOKENS + GLOBAL BASE
--------------------------------- */
-:root {
-  --bg: #f8fafc;
-  --muted: #6b7280;
-
-  /* Catppuccin Latte (light mode) */
-  --cp-bg: #eff1f5;
-  --cp-surface: #ffffff;
-  --cp-muted: #6c6f85;
-  --cp-text: #1e2030;
-  --cp-primary: #f2cdcd;
-  --cp-primary-foreground: #2a2a37;
-  --cp-primary-hover: #e6c3c3;
-  /* stronger CTA token for primary actions */
-  --cp-cta: #e0557a;
-  --cp-cta-foreground: #ffffff;
-  --cp-cta-hover: #c94b6e;
-  --cp-accent: #f5bde6;
-  --cp-accent-foreground: #3a2b3b;
-  --cp-border: #e6e9ef;
-  --cp-success: #b7f0ad;
-  --cp-warning: #ffd580;
-  --cp-danger: #ffb6b6;
-}
-
-/* Catppuccin Mocha (dark mode) */
-.theme-catppuccin-dark {
-  --cp-bg: #1f1d2e;
-  --cp-surface: #11111b;
-  --cp-muted: #9aa0b4;
-  --cp-text: #cdd6f4;
-  --cp-primary: #f5c2e7;
-  --cp-primary-foreground: #221826;
-  --cp-primary-hover: #f0bfe0;
-  --cp-cta: #ff7abf;
-  --cp-cta-foreground: #ffffff;
-  --cp-cta-hover: #f06fb4;
-  --cp-accent: #89dceb;
-  --cp-accent-foreground: #062027;
-  --cp-border: #2a2a3a;
-  --cp-success: #5bdc8a;
-  --cp-warning: #f5a97f;
-  --cp-danger: #f38ba8;
-}
-
+@import "./styles/tokens.css";
 html,
 body,
 #root {
