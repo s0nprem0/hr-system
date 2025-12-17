@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../utils/api'
+import type { ApiResponse, UserDTO } from '@hr/shared'
 import handleApiError from '../utils/handleApiError'
 import { isValidMongoId } from '../utils/validators'
 import { useToast } from '../context/ToastContext'
@@ -10,7 +11,7 @@ import type { Role } from '../context/AuthPermissions'
 type User = {
 	_id: string
 	name?: string
-	email: string
+	email?: string
 	role?: Role
 	active?: boolean
 }
@@ -45,11 +46,16 @@ const UserForm = () => {
 			setLoading(true)
 			try {
 				const res = await api.get(`/api/users/${params.id}`)
-				const u: User = res.data?.data
-				setName(u?.name || '')
-				setEmail(u?.email || '')
-				setRole(u?.role || 'employee')
-				setActive(u?.active ?? true)
+				const r = res.data as ApiResponse<UserDTO>
+				if (r?.success) {
+					const u: User = r.data
+					setName(u?.name || '')
+					setEmail(u?.email || '')
+					setRole(u?.role || 'employee')
+					setActive(u?.active ?? true)
+				} else {
+					throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load user')
+				}
 			} catch (err: unknown) {
 				const apiErr = handleApiError(err)
 				if (/not found/i.test(apiErr.message)) setError('User not found')
@@ -86,12 +92,16 @@ const UserForm = () => {
 			payload.active = active
 			if (!isEdit && password) payload.password = password
 			if (isEdit && params.id) {
-				await api.put(`/api/users/${params.id}`, payload)
-				toast.showToast('User updated', 'success')
+				const res = await api.put(`/api/users/${params.id}`, payload)
+				const r = res.data as ApiResponse<UserDTO>
+				if (r?.success) toast.showToast('User updated', 'success')
+				else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Update failed')
 			} else {
 				if (!password) return setError('Password is required for new user')
-				await api.post('/api/users', { ...payload, password })
-				toast.showToast('User created', 'success')
+				const res = await api.post('/api/users', { ...payload, password })
+				const r = res.data as ApiResponse<UserDTO>
+				if (r?.success) toast.showToast('User created', 'success')
+				else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Create failed')
 			}
 			navigate('/users')
 		} catch (err: unknown) {

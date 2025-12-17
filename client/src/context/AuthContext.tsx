@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import api from '../utils/api';
+import type { ApiResponse, UserDTO } from '@hr/shared';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
 import { handleUnauthorized as handleUnauthorizedHelper } from '../utils/authRedirect';
 
@@ -51,12 +52,11 @@ export function AuthContext({ children }: { children: ReactNode }) {
             try {
                 const token = safeGetItem('token');
                 if (token) {
-                    const response = await api.get('/api/auth/verify');
-                    if (response.data?.success) {
-                        // server standardised responses are wrapped in `data`
-                        // e.g. { success: true, data: { user: ... } }
-                        setUser(response.data?.data?.user ?? null);
-                    }
+                        const response = await api.get('/api/auth/verify');
+                        const r = response.data as ApiResponse<{ user: UserDTO }>;
+                        if (r?.success) {
+                            setUser(r.data?.user ?? null);
+                        }
                 } else {
                     setUser(null);
                 }

@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import PageContainer from '../components/layout/PageContainer';
 import api from '../utils/api';
+import type { ApiResponse, DepartmentDTO, EmployeeDTO } from '@hr/shared';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
@@ -36,7 +37,9 @@ const EmployeeForm = () => {
     const fetchDepartments = async () => {
       try {
         const res = await api.get('/api/departments');
-        setDepartments(res.data?.data?.items || []);
+        const r = res.data as ApiResponse<{ items: DepartmentDTO[] }>;
+        if (r?.success) setDepartments(r.data?.items || []);
+        else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load departments');
       } catch {
         // ignore
       }
@@ -55,11 +58,17 @@ const EmployeeForm = () => {
       setLoading(true);
       try {
         const res = await api.get(`/api/employees/${params.id}`);
-        const e = res.data?.data;
-        setName(e?.name || '');
-        setEmail(e?.email || '');
-        setRole(e?.role || 'employee');
-        setDepartmentId(e?.profile?.department?._id || e?.profile?.department || undefined);
+        const r = res.data as ApiResponse<EmployeeDTO>;
+        if (r?.success) {
+          const e = r.data;
+          setName(e?.name || '');
+          setEmail(e?.email || '');
+          setRole(e?.role || 'employee');
+          const dept = e?.profile?.department;
+          setDepartmentId(typeof dept === 'string' ? dept : dept?._id || undefined);
+        } else {
+          throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load employee');
+        }
       } catch (err: unknown) {
         const apiErr = handleApiError(err);
         if (/not found/i.test(apiErr.message)) setError('Employee not found');
@@ -113,14 +122,19 @@ const EmployeeForm = () => {
     try {
       if (isEdit && params.id) {
         payload.active = active;
-        await api.put(`/api/employees/${params.id}`, payload);
+        const res = await api.put(`/api/employees/${params.id}`, payload);
+        const r = res.data as ApiResponse<EmployeeDTO>;
+        if (!r?.success) throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to update employee');
+        const updated = r.data;
         setSuccess('Employee updated');
         toast.showToast('Employee updated', 'success');
         // give user a chance to see success message
-        navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900);
+        navTimeout.current = window.setTimeout(() => navigate(`/employees/${updated?._id || params.id}`), 900);
       } else {
         const res = await api.post('/api/employees', { ...payload, password, active });
-        const created = res.data?.data;
+        const r = res.data as ApiResponse<EmployeeDTO>;
+        if (!r?.success) throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to create employee');
+        const created = r.data;
         setSuccess('Employee created');
         toast.showToast('Employee created', 'success');
         navTimeout.current = window.setTimeout(() => navigate(`/employees/${created?._id || ''}`), 900);

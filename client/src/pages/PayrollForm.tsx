@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import PageContainer from '../components/layout/PageContainer';
 import { FormCard } from '../components/ui';
 import api from '../utils/api';
+import type { ApiResponse, EmployeeDTO, PayrollDTO } from '@hr/shared';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
@@ -33,8 +34,9 @@ const PayrollForm = () => {
   const fetchEmployees = async () => {
     try {
       const res = await api.get('/api/employees', { params: { page: 1, limit: 200 } });
-      const data = res.data?.data;
-      setEmployees(data?.items || []);
+      const r = res.data as ApiResponse<{ items: EmployeeDTO[] }>;
+      if (r?.success) setEmployees(r.data?.items || []);
+      else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load employees');
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
       console.error('Failed to fetch employees:', apiErr.message);
@@ -48,13 +50,18 @@ const PayrollForm = () => {
       return;
     }
     setLoading(true);
-    try {
-      const res = await api.get(`/api/payroll/${params.id}`);
-      const p = res.data?.data;
-      setEmployeeId(p?.employee?._id || '');
-      setAmount(p?.amount != null ? String(p.amount) : '');
-      setPayDate(p?.payDate ? new Date(p.payDate).toISOString().slice(0, 10) : '');
-    } catch (err: unknown) {
+      try {
+        const res = await api.get(`/api/payroll/${params.id}`);
+        const r = res.data as ApiResponse<PayrollDTO>;
+        if (r?.success) {
+          const p = r.data;
+          setEmployeeId(p?.employeeId || '');
+          setAmount(p?.net != null ? String(p.net) : '');
+          setPayDate(p?.periodStart ? new Date(p.periodStart).toISOString().slice(0, 10) : '');
+        } else {
+          throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load payroll');
+        }
+      } catch (err: unknown) {
       const apiErr = handleApiError(err);
       if (/not found/i.test(apiErr.message)) setError('Payroll entry not found');
       else setError(apiErr.message);
@@ -87,11 +94,15 @@ const PayrollForm = () => {
         payDate: payDate || undefined,
       };
       if (isEdit && params.id) {
-        await api.put(`/api/payroll/${params.id}`, payload);
-        toast.showToast('Payroll entry updated', 'success');
+        const res = await api.put(`/api/payroll/${params.id}`, payload);
+        const r = res.data as ApiResponse<PayrollDTO>;
+        if (r?.success) toast.showToast('Payroll entry updated', 'success');
+        else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Update failed');
       } else {
-        await api.post('/api/payroll', payload);
-        toast.showToast('Payroll entry created', 'success');
+        const res = await api.post('/api/payroll', payload);
+        const r = res.data as ApiResponse<PayrollDTO>;
+        if (r?.success) toast.showToast('Payroll entry created', 'success');
+        else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Create failed');
       }
       navigate('/payroll');
     } catch (err: unknown) {

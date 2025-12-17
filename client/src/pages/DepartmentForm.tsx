@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import PageContainer from '../components/layout/PageContainer';
 import api from '../utils/api';
+import type { ApiResponse, DepartmentDTO } from '@hr/shared';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
@@ -32,9 +33,14 @@ const DepartmentForm = () => {
       setLoading(true);
       try {
         const res = await api.get(`/api/departments/${params.id}`);
-        const d = res.data?.data;
-        setName(d?.name || '');
-        setDescription(d?.description || '');
+        const r = res.data as ApiResponse<DepartmentDTO>;
+        if (r?.success) {
+          const d = r.data;
+          setName(d?.name || '');
+          setDescription(d?.description || '');
+        } else {
+          throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load department');
+        }
       } catch (err: unknown) {
         const apiErr = handleApiError(err);
         if (/not found/i.test(apiErr.message)) setError('Department not found');
@@ -60,13 +66,23 @@ const DepartmentForm = () => {
     setSaving(true);
     try {
       if (isEdit && params.id) {
-        await api.put(`/api/departments/${params.id}`, { name, description });
-        toast.showToast('Department updated', 'success');
-        navigate('/departments');
+        const res = await api.put(`/api/departments/${params.id}`, { name, description });
+        const r = res.data as ApiResponse<DepartmentDTO>;
+        if (r?.success) {
+          toast.showToast('Department updated', 'success');
+          navigate('/departments');
+        } else {
+          throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Update failed');
+        }
       } else {
-        await api.post('/api/departments', { name, description });
-        toast.showToast('Department created', 'success');
-        navigate('/departments');
+        const res = await api.post('/api/departments', { name, description });
+        const r = res.data as ApiResponse<DepartmentDTO>;
+        if (r?.success) {
+          toast.showToast('Department created', 'success');
+          navigate('/departments');
+        } else {
+          throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Create failed');
+        }
       }
     } catch (err: unknown) {
       const apiErr = handleApiError(err);

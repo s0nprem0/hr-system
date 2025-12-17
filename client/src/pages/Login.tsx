@@ -4,7 +4,7 @@ import handleApiError from '../utils/handleApiError';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button, Input, CenteredCard } from '../components/ui';
-import type { AuthLoginResponse } from '@hr/shared';
+import type { AuthLoginResponse, ApiResponse } from '@hr/shared';
 import { safeSetItem } from '../utils/storage';
 import { getAndClearPostLoginRedirect } from '../utils/authRedirect';
 import PageContainer from '../components/layout/PageContainer';
@@ -23,9 +23,9 @@ const Login = () => {
     try {
       setLoading(true);
       const res = await api.post('/api/auth/login', { email, password });
-      if (res.data?.success) {
-        // server returns standardized payload: { success: true, data: { token, refreshToken, user } }
-        const payload = res.data?.data as AuthLoginResponse | undefined;
+      const r = res.data as ApiResponse<AuthLoginResponse>;
+      if (r?.success) {
+        const payload = r.data;
         if (payload) {
           safeSetItem('token', payload.token);
           safeSetItem('refreshToken', payload.refreshToken);
@@ -39,7 +39,7 @@ const Login = () => {
         }
         navigate(dest);
       } else {
-        setError(res.data?.error?.message || res.data?.error || 'Login failed');
+        setError((r as { success: false; error?: { message?: string } }).error?.message || 'Login failed');
       }
     } catch (err: unknown) {
       const apiErr = handleApiError(err);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../utils/api';
+import type { ApiResponse } from '@hr/shared';
 import handleApiError from '../utils/handleApiError';
 import { useToast } from '../context/ToastContext';
 import { useConfirm } from '../context/ConfirmContext';
@@ -50,9 +51,14 @@ export function useDataList<T = Record<string, unknown>>(options: UseDataListOpt
     setError(null);
     try {
       const res = await api.get(endpoint, { params: { page, limit: pageSize, search } });
-      const data = res.data?.data;
-      setItems(data?.items || []);
-      setTotal(data?.total || 0);
+      const r = res.data as ApiResponse<{ items: T[]; total: number }>;
+      if (r?.success) {
+        const data = r.data;
+        setItems(data?.items || []);
+        setTotal(data?.total || 0);
+      } else {
+        throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to fetch list');
+      }
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
       setError(apiErr.message);
@@ -73,9 +79,14 @@ export function useDataList<T = Record<string, unknown>>(options: UseDataListOpt
     const ok = await confirm(deleteConfirmMessage);
     if (!ok) return;
     try {
-      await api.delete(`${endpoint}/${id}`);
-      toast.showToast(deleteSuccessMessage, 'success');
-      refetch();
+      const res = await api.delete(`${endpoint}/${id}`);
+      const r = res.data as ApiResponse<null>;
+      if (r?.success) {
+        toast.showToast(deleteSuccessMessage, 'success');
+        refetch();
+      } else {
+        throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Delete failed');
+      }
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
       toast.showToast(apiErr.message, 'error');

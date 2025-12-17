@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import PageContainer from '../components/layout/PageContainer';
 import { formatRole } from '../context/AuthPermissions';
 import api from '../utils/api';
+import type { ApiResponse, EmployeeDTO } from '@hr/shared';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
@@ -11,8 +12,8 @@ import { useConfirm } from '../context/ConfirmContext';
 interface Employee {
   _id: string;
   name: string;
-  email: string;
-  role: string;
+  email?: string;
+  role?: string;
   profile?: { department?: { _id?: string; name?: string } } | null;
   createdAt?: string;
 }
@@ -35,7 +36,9 @@ const EmployeeDetail = () => {
       setError(null);
       try {
         const res = await api.get(`/api/employees/${id}`);
-        setEmployee(res.data?.data || null);
+        const r = res.data as ApiResponse<EmployeeDTO>;
+        if (r?.success) setEmployee(r.data || null);
+        else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Failed to load employee');
       } catch (err: unknown) {
         const apiErr = handleApiError(err);
         if (/not found/i.test(apiErr.message)) setError('Employee not found');
@@ -60,8 +63,10 @@ const EmployeeDetail = () => {
     const ok = await confirm('Delete this employee?');
     if (!ok) return;
     try {
-      await api.delete(`/api/employees/${id}`);
-      navigate('/employees');
+      const res = await api.delete(`/api/employees/${id}`);
+      const r = res.data as ApiResponse<null>;
+      if (r?.success) navigate('/employees');
+      else throw new Error((r as { success: false; error?: { message?: string } }).error?.message || 'Delete failed');
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
       toast.showToast(apiErr.message, 'error');
@@ -71,25 +76,25 @@ const EmployeeDetail = () => {
   return (
     <PageContainer>
       <div className="card mb-4 max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold">Employee Detail</h1>
-          {loading && <div className="muted">Loading...</div>}
-          {error && <div className="text-danger">{error}</div>}
-          {employee && (
-            <div className="space-y-2 mt-3">
-              <div><strong>Name:</strong> {employee.name}</div>
-              <div><strong>Email:</strong> {employee.email}</div>
-              <div><strong>Role:</strong> {formatRole(employee.role)}</div>
-              <div><strong>Department:</strong> {employee.profile?.department?.name ?? '-'}</div>
-              <div><strong>Created:</strong> {employee.createdAt ? new Date(employee.createdAt).toLocaleString() : '-'}</div>
-            </div>
-          )}
-
-          <div className="mt-4 flex gap-2">
-            <Link to="/employees" className="muted">Back to employees</Link>
-            <Link to={`/employees/${id}/edit`} className="btn">Edit</Link>
-            <button className="btn text-danger" onClick={handleDelete}>Delete</button>
+        <h1 className="text-2xl font-bold">Employee Detail</h1>
+        {loading && <div className="muted">Loading...</div>}
+        {error && <div className="text-danger">{error}</div>}
+        {employee && (
+          <div className="space-y-2 mt-3">
+            <div><strong>Name:</strong> {employee.name}</div>
+            <div><strong>Email:</strong> {employee.email}</div>
+            <div><strong>Role:</strong> {formatRole(employee.role)}</div>
+            <div><strong>Department:</strong> {employee.profile?.department?.name ?? '-'}</div>
+            <div><strong>Created:</strong> {employee.createdAt ? new Date(employee.createdAt).toLocaleString() : '-'}</div>
           </div>
+        )}
+
+        <div className="mt-4 flex gap-2">
+          <Link to="/employees" className="muted">Back to employees</Link>
+          <Link to={`/employees/${id}/edit`} className="btn">Edit</Link>
+          <button className="btn text-danger" onClick={handleDelete}>Delete</button>
         </div>
+      </div>
     </PageContainer>
   );
 };

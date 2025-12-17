@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PageContainer from '../components/layout/PageContainer';
 import { DataTable, type Column } from '../components/DataTable';
 import api from '../utils/api';
+import type { ApiResponse, AuditLogDTO } from '@hr/shared';
 import handleApiError from '../utils/handleApiError';
 import type { JSONValue } from '../types/json';
 import { PageHeader } from '../components/PageHeader';
@@ -52,9 +53,16 @@ const AuditLogs = () => {
       if (dateTo) params.to = dateTo;
 
       const res = await api.get('/api/audits', { params });
-      const data = res.data?.data;
-      setItems(data?.items || []);
-      setTotal(data?.total || 0);
+      const r = res.data as ApiResponse<{ items: AuditLogDTO[]; total: number }>;
+      if (r?.success) {
+        const data = r.data;
+        setItems((data?.items || []) as AuditLogRow[]);
+        setTotal(data?.total || 0);
+      } else {
+        type ApiErr = { success: false; error: { message?: string } };
+        const errMsg = r && !(r as { success: boolean }).success ? (r as ApiErr).error?.message ?? 'Failed to load audits' : 'Failed to load audits';
+        throw new Error(errMsg);
+      }
     } catch (err: unknown) {
       const apiErr = (err && typeof err === 'object') ? (handleApiError(err) as { message: string }) : undefined;
       setError(apiErr?.message ?? 'Failed to load audit logs');

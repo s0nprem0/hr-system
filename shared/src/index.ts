@@ -5,6 +5,7 @@ export type Role = 'admin' | 'hr' | 'employee';
 export interface UserDTO {
   _id: string;
   name: string;
+  email?: string;
   role: Role;
 }
 
@@ -17,6 +18,15 @@ export interface AuthLoginResponse {
   token: string;
   refreshToken: string;
   user: UserDTO;
+}
+
+export interface AuthRefreshRequest {
+  refreshToken: string;
+}
+
+export interface AuthRefreshResponse {
+  token: string;
+  refreshToken?: string;
 }
 
 export interface ApiSuccess<T = unknown> {
@@ -39,6 +49,7 @@ export interface DepartmentDTO {
   _id: string;
   name: string;
   managerId?: string | null;
+  description?: string;
 }
 
 export interface EmployeeDTO {
@@ -47,6 +58,20 @@ export interface EmployeeDTO {
   email: string;
   departmentId?: string | null;
   role?: Role;
+  profile?: { department?: { _id?: string; name?: string } } | null;
+  active?: boolean;
+  createdAt?: string;
+}
+
+export interface AuditLogDTO {
+  _id: string;
+  collectionName: string;
+  documentId?: string | null;
+  action: string;
+  user?: string | null;
+  before?: unknown;
+  after?: unknown;
+  createdAt: string;
 }
 
 export interface PayrollDTO {

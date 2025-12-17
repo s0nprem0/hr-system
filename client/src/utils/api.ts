@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { safeGetItem, safeSetItem, safeRemoveItem } from './storage'
-import type { ApiResponse } from '@hr/shared'
+import type { ApiResponse, AuthRefreshResponse } from '@hr/shared'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
 
@@ -54,8 +54,6 @@ function onRefreshFailed(err: unknown) {
 	refreshSubscribers = []
 }
 
-type RefreshPayload = { token: string; refreshToken?: string }
-
 async function refreshAuth(): Promise<string> {
 	const refreshToken = safeGetItem('refreshToken')
 	if (!refreshToken)
@@ -64,7 +62,7 @@ async function refreshAuth(): Promise<string> {
 			status: 401,
 		})
 
-	const resp = await axios.post<ApiResponse<RefreshPayload>>(
+	const resp = await axios.post<ApiResponse<AuthRefreshResponse>>(
 		`${API_URL}/api/auth/refresh`,
 		{ refreshToken }
 	)
