@@ -1,3 +1,4 @@
+import './setup-bun'
 import { describe, it, expect, vi } from 'vitest'
 import { safeGetItem, safeSetItem, safeRemoveItem } from '../src/utils/storage'
 

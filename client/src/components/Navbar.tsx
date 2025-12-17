@@ -14,19 +14,19 @@ const Navbar = () => {
               <>
                 <Link to="/dashboard" className="muted">Dashboard</Link>
                 {/* Role-based links */}
-                {auth.user.role === 'admin' && (
+                {auth?.hasRole && auth.hasRole('admin') && (
                   <>
                     <Link to="/users" className="muted">Users</Link>
                   </>
                 )}
-                {auth.user.role === 'hr' && (
+                {auth?.hasRole && auth.hasRole('hr') && (
                   <>
                     <Link to="/employees" className="muted">Employees</Link>
                     <Link to="/departments" className="muted">Departments</Link>
                     <Link to="/payroll" className="muted">Payroll</Link>
                   </>
                 )}
-                {auth.user.role === 'employee' && (
+                {auth?.hasRole && auth.hasRole('employee') && (
                   <>
                     <Link to="/profile" className="muted">Profile</Link>
                   </>

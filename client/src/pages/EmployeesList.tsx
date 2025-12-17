@@ -76,7 +76,7 @@ const EmployeesList = () => {
       label: 'Delete',
       onClick: (employee: Employee) => handleDelete(employee._id),
       className: 'text-danger',
-      condition: () => auth?.user?.role === 'admin',
+      condition: () => !!auth?.hasRole && auth.hasRole('admin'),
     },
   ];
 
@@ -86,7 +86,7 @@ const EmployeesList = () => {
         <div className="card">
           <PageHeader
             title="Employees"
-            addButton={{ to: '/employees/new', text: 'Add Employee' }}
+            addButton={auth?.can && auth.can('manageEmployees') ? { to: '/employees/new', text: 'Add Employee' } : undefined}
             search={{ value: search, onChange: setSearch }}
           />
 

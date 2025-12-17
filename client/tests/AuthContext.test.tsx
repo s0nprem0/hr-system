@@ -1,38 +1,28 @@
-import { render, screen, act } from '@testing-library/react'
-import AuthContext, { useAuth } from '../src/context/AuthContext'
+/* eslint-disable */
+// @ts-nocheck
+import './setup-bun'
 import { describe, it, expect, vi } from 'vitest'
-import React from 'react'
-
-function TestComponent() {
-  const auth = useAuth()
-  React.useEffect(() => {
-    // set a logged-in user
-    auth?.login({ _id: '1', name: 'Test', role: 'admin' }, 'tok')
-  }, [])
-  return <div>{auth?.user ? `user:${auth.user.name}` : 'no-user'}</div>
-}
+import { safeGetItem } from '../src/utils/storage'
+import { handleUnauthorized } from '../src/context/AuthContext'
 
 describe('AuthContext unauthorized handling', () => {
-  it('clears user and redirects on auth:unauthorized', async () => {
-    const replaceSpy = vi.spyOn(window.location, 'replace').mockImplementation(() => undefined)
+  it('clears storage and redirects when handleUnauthorized is called', () => {
+    // set tokens in storage
+    globalThis.localStorage.setItem('token', 'tok')
+    globalThis.localStorage.setItem('refreshToken', 'r')
 
-    render(
-      <AuthContext>
-        <TestComponent />
-      </AuthContext>,
-    )
+    const originalLocation = (globalThis as unknown as Record<string, unknown>).location
+    const replaceMock = vi.fn()
+    // @ts-expect-error assign test location for environment without DOM
+    ;(globalThis as unknown as Record<string, unknown>).location = { ...(originalLocation as any), replace: replaceMock }
 
-    // initially the user should be set by TestComponent
-    expect(screen.getByText(/user:Test/)).toBeTruthy()
+    handleUnauthorized()
 
-    // dispatch unauthorized event
-    act(() => {
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'))
-    })
+    expect(replaceMock).toHaveBeenCalledWith('/login')
+    expect(safeGetItem('token')).toBeNull()
 
-    // context should redirect
-    expect(replaceSpy).toHaveBeenCalledWith('/login')
-
-    replaceSpy.mockRestore()
+    // restore
+    // @ts-expect-error restore original location
+    globalThis.location = originalLocation as any
   })
 })

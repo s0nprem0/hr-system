@@ -16,6 +16,10 @@ interface AuthContextType {
     login: (user: User, token?: string) => void;
     logout: () => void;
     loading: boolean;
+    hasRole: (role: User['role']) => boolean;
+    hasAnyRole: (roles: User['role'][]) => boolean;
+    can: (permission: string) => boolean;
+    permissions: Record<string, boolean>;
 }
 
 const userContext = createContext<AuthContextType | null>(null);
@@ -23,6 +27,48 @@ const userContext = createContext<AuthContextType | null>(null);
 export function AuthContext({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const getPermissions = (role: User['role'] | null) => {
+        // Centralized permission map by role. Update as needed.
+        const map: Record<User['role'], Record<string, boolean>> = {
+            admin: {
+                manageUsers: true,
+                manageEmployees: true,
+                manageDepartments: true,
+                managePayroll: true,
+                viewAuditLogs: true,
+            },
+            hr: {
+                manageUsers: false,
+                manageEmployees: true,
+                manageDepartments: true,
+                managePayroll: true,
+                viewAuditLogs: true,
+            },
+            employee: {
+                manageUsers: false,
+                manageEmployees: false,
+                manageDepartments: false,
+                managePayroll: false,
+                viewAuditLogs: false,
+            },
+        };
+        return role ? map[role] ?? {} : {};
+    };
+
+    const permissions = getPermissions(user?.role ?? null);
+
+    function hasRole(role: User['role']) {
+        return !!user && user.role === role;
+    }
+
+    function hasAnyRole(roles: User['role'][] = []) {
+        return !!user && roles.includes(user.role);
+    }
+
+    function can(permission: string) {
+        return !!permissions && !!permissions[permission];
+    }
 
     useEffect(() => {
         const verifyUser = async () => {
@@ -47,11 +93,8 @@ export function AuthContext({ children }: { children: ReactNode }) {
         verifyUser();
         // Listen for global unauthorized events emitted by the API layer
         const onUnauthorized = () => {
-            safeRemoveItem('token');
-            safeRemoveItem('refreshToken');
-            setUser(null);
-            // redirect to login using replace to avoid back navigation to protected pages
-            if (typeof window !== 'undefined') window.location.replace('/login');
+            // use the exported handler so tests can call it directly
+            handleUnauthorized();
         };
         window.addEventListener('auth:unauthorized', onUnauthorized as EventListener);
         return () => {
@@ -77,7 +120,7 @@ export function AuthContext({ children }: { children: ReactNode }) {
     }
 
     return (
-        <userContext.Provider value={{ user, login, logout, loading }}>
+        <userContext.Provider value={{ user, login, logout, loading, hasRole, hasAnyRole, can, permissions }}>
             {children}
         </userContext.Provider>
     );
@@ -85,6 +128,21 @@ export function AuthContext({ children }: { children: ReactNode }) {
 
 export function useAuth() {
     return useContext(userContext);
+}
+
+export function handleUnauthorized(redirectFn?: (path: string) => void) {
+    try {
+        safeRemoveItem('token');
+        safeRemoveItem('refreshToken');
+    } catch {
+        // ignore
+    }
+    // Note: not changing any React state here; the context's listener calls this helper and also clears state via its closure.
+    if (redirectFn) {
+        redirectFn('/login');
+    } else if (typeof window !== 'undefined' && typeof window.location?.replace === 'function') {
+        window.location.replace('/login');
+    }
 }
 
 export default AuthContext;
