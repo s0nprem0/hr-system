@@ -2,7 +2,7 @@ import express from 'express';
 import { sendSuccess } from '../utils/apiResponse';
 import { login, verify, register, refresh, logout } from '../controllers/authController';
 import verifyUser from '../middleware/authMiddleware';
-import authorize from '../middleware/authorize';
+import requirePermission from '../middleware/requirePermission';
 import loginRateLimiter from '../middleware/rateLimit';
 import { body } from 'express-validator';
 import validationHandler from '../middleware/validationHandler';
@@ -37,7 +37,7 @@ router.post('/refresh', validationHandler, refresh);
 router.post('/logout', validationHandler, logout);
 
 // Sample protected admin route (returns basic info if user is admin)
-router.get('/admin', verifyUser, authorize(['admin']), (req, res) => {
+router.get('/admin', verifyUser, requirePermission('manageUsers'), (req, res) => {
 	return sendSuccess(res, { message: 'Admin access granted', user: req.user }, 200);
 });
 

@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, query, param } from 'express-validator';
 import verifyUser from '../middleware/authMiddleware';
-import authorize from '../middleware/authorize';
+import requirePermission from '../middleware/requirePermission';
 import validationHandler from '../middleware/validationHandler';
 import {
   listPayroll,
@@ -17,7 +17,7 @@ const router = express.Router();
 router.get(
   '/',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('managePayroll'),
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
   query('limit').optional().isInt({ min: 1 }).withMessage('limit must be a positive integer'),
   validationHandler,
@@ -28,7 +28,7 @@ router.get(
 router.post(
   '/',
   verifyUser,
-  authorize(['hr']),
+  requirePermission('managePayroll'),
   body('employeeId').isMongoId().withMessage('employeeId must be a valid id'),
   body('amount').isFloat({ gt: 0 }).withMessage('amount must be a positive number'),
   body('payDate').optional().isISO8601().withMessage('payDate must be a valid date'),
@@ -40,7 +40,7 @@ router.post(
 router.get(
   '/:id',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('managePayroll'),
   param('id').isMongoId().withMessage('Invalid payroll id'),
   validationHandler,
   getPayroll
@@ -50,7 +50,7 @@ router.get(
 router.put(
   '/:id',
   verifyUser,
-  authorize(['hr']),
+  requirePermission('managePayroll'),
   param('id').isMongoId().withMessage('Invalid payroll id'),
   body('employeeId').optional().isMongoId(),
   body('amount').optional().isFloat({ gt: 0 }),
@@ -63,7 +63,7 @@ router.put(
 router.delete(
   '/:id',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('managePayroll'),
   param('id').isMongoId().withMessage('Invalid payroll id'),
   validationHandler,
   deletePayroll

@@ -1,7 +1,7 @@
 import express from 'express';
 import { param, body, query } from 'express-validator';
 import verifyUser from '../middleware/authMiddleware';
-import authorize from '../middleware/authorize';
+import requirePermission from '../middleware/requirePermission';
 import validationHandler from '../middleware/validationHandler';
 import {
   listEmployees,
@@ -22,7 +22,7 @@ router.get('/me', verifyUser, async (req, res) => {
 router.get(
   '/',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('manageEmployees'),
   query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer'),
   query('limit').optional().isInt({ min: 1 }).withMessage('limit must be a positive integer'),
   validationHandler,
@@ -33,7 +33,7 @@ router.get(
 router.get(
   '/:id',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('manageEmployees'),
   param('id').isMongoId().withMessage('Invalid employee id'),
   validationHandler,
   getEmployee
@@ -43,7 +43,7 @@ router.get(
 router.post(
   '/',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('manageEmployees'),
   body('name').isString().notEmpty().withMessage('name is required'),
   body('email').isEmail().withMessage('valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('password must be at least 6 characters'),
@@ -56,7 +56,7 @@ router.post(
 router.put(
   '/:id',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('manageEmployees'),
   param('id').isMongoId().withMessage('Invalid employee id'),
   body('name').optional().isString(),
   body('email').optional().isEmail(),
@@ -70,7 +70,7 @@ router.put(
 router.delete(
   '/:id',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageEmployees'),
   param('id').isMongoId().withMessage('Invalid employee id'),
   validationHandler,
   deleteEmployee

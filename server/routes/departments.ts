@@ -1,18 +1,18 @@
 import express from 'express';
 import verifyUser from '../middleware/authMiddleware';
-import authorize from '../middleware/authorize';
+import requirePermission from '../middleware/requirePermission';
 import { body, param } from 'express-validator';
 import validationHandler from '../middleware/validationHandler';
 import departmentsController from '../controllers/departmentsController';
 
 const router = express.Router();
 
-router.get('/', verifyUser, authorize(['admin', 'hr']), departmentsController.listDepartments);
+router.get('/', verifyUser, requirePermission('manageDepartments'), departmentsController.listDepartments);
 
 router.post(
   '/',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageDepartments'),
   [body('name').trim().notEmpty().withMessage('Name is required')],
   validationHandler,
   departmentsController.createDepartment,
@@ -21,7 +21,7 @@ router.post(
 router.get(
   '/:id',
   verifyUser,
-  authorize(['admin', 'hr']),
+  requirePermission('manageDepartments'),
   [param('id').isMongoId().withMessage('Invalid id')],
   validationHandler,
   departmentsController.getDepartment,
@@ -30,7 +30,7 @@ router.get(
 router.put(
   '/:id',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageDepartments'),
   [param('id').isMongoId().withMessage('Invalid id'), body('name').optional().trim()],
   validationHandler,
   departmentsController.updateDepartment,
@@ -39,7 +39,7 @@ router.put(
 router.delete(
   '/:id',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageDepartments'),
   [param('id').isMongoId().withMessage('Invalid id')],
   validationHandler,
   departmentsController.deleteDepartment,

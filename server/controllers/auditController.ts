@@ -30,3 +30,14 @@ export async function listAuditLogs(req: Request, res: Response) {
     return sendError(res, 'Failed to list audit logs', 500, err);
   }
 }
+
+export async function getAuditLog(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const entry = await AuditLog.findById(id).lean();
+    if (!entry) return sendError(res, 'Audit entry not found', 404);
+    return sendSuccess(res, entry);
+  } catch (err: unknown) {
+    return sendError(res, 'Failed to fetch audit log', 500, err);
+  }
+}

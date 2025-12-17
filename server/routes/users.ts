@@ -1,6 +1,6 @@
 import express from 'express';
 import verifyUser from '../middleware/authMiddleware';
-import authorize from '../middleware/authorize';
+import requirePermission from '../middleware/requirePermission';
 import validationHandler from '../middleware/validationHandler';
 import { param, body } from 'express-validator';
 import type { Request, Response } from 'express';
@@ -13,7 +13,7 @@ import safeAuditLog from '../utils/auditLogger';
 const router = express.Router();
 
 // List users - accessible to admin and hr
-router.get('/', verifyUser, authorize(['admin', 'hr']), async (req, res) => {
+router.get('/', verifyUser, requirePermission('manageUsers'), async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.min(Number(req.query.limit) || 25, 100);
@@ -48,7 +48,7 @@ router.get('/', verifyUser, authorize(['admin', 'hr']), async (req, res) => {
 router.delete(
   '/:id',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageUsers'),
   [param('id').isMongoId().withMessage('Invalid id')],
   validationHandler,
   async (req: Request, res: Response) => {
@@ -65,7 +65,7 @@ router.delete(
 );
 
 // Get single user - admin and hr can view
-router.get('/:id', verifyUser, authorize(['admin', 'hr']), [param('id').isMongoId().withMessage('Invalid id')], validationHandler, async (req: Request, res: Response) => {
+router.get('/:id', verifyUser, requirePermission('manageUsers'), [param('id').isMongoId().withMessage('Invalid id')], validationHandler, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     logger.info({ id }, 'GET /api/users/:id requested');
@@ -83,7 +83,7 @@ router.get('/:id', verifyUser, authorize(['admin', 'hr']), [param('id').isMongoI
 router.post(
   '/',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageUsers'),
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
@@ -123,7 +123,7 @@ router.post(
 router.put(
   '/:id',
   verifyUser,
-  authorize(['admin']),
+  requirePermission('manageUsers'),
   [
     param('id').isMongoId().withMessage('Invalid id'),
     body('name').optional().trim(),
