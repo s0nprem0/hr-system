@@ -36,7 +36,8 @@ const PayrollForm = () => {
       const data = res.data?.data;
       setEmployees(data?.items || []);
     } catch (err: unknown) {
-      console.error('Failed to fetch employees:', err);
+      const apiErr = handleApiError(err);
+      console.error('Failed to fetch employees:', apiErr.message);
     }
   };
 

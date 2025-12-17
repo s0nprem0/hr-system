@@ -70,10 +70,12 @@ async function refreshAuth(): Promise<string> {
 	)
 
 	const data = resp.data
+	function isApiErrorResponse<T>(r: ApiResponse<T>): r is { success: false; error: { message: string; details?: unknown } } {
+		return (r as ApiResponse<T>).success === false && typeof (r as unknown as Record<string, unknown>)['error'] === 'object'
+	}
+
 	if (!data?.success) {
-		const remoteErr = (data as unknown as {
-			error?: { message?: string; details?: unknown }
-		})?.error
+		const remoteErr = isApiErrorResponse(data) ? data.error : undefined
 		return Promise.reject({
 			response: {
 				data: {

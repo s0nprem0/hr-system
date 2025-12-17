@@ -26,7 +26,7 @@ export interface UseDataListReturn<T> {
   handleDelete: (id: string) => Promise<void>;
 }
 
-export function useDataList<T = unknown>(options: UseDataListOptions): UseDataListReturn<T> {
+export function useDataList<T = Record<string, unknown>>(options: UseDataListOptions): UseDataListReturn<T> {
   const {
     endpoint,
     pageSize: defaultPageSize = 20,

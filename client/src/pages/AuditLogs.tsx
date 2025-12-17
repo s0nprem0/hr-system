@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import PageContainer from '../components/layout/PageContainer';
 import { DataTable, type Column } from '../components/DataTable';
 import api from '../utils/api';
+import handleApiError from '../utils/handleApiError';
+import type { JSONValue } from '../types/json';
 import { PageHeader } from '../components/PageHeader';
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper';
 import { Input, Select, Button, Dialog } from '../components/ui';
@@ -13,8 +15,8 @@ interface AuditLogRow {
   documentId: string | null;
   action: string;
   user?: string | null;
-  before?: unknown;
-  after?: unknown;
+  before?: JSONValue;
+  after?: JSONValue;
   createdAt: string;
 }
 
@@ -40,7 +42,7 @@ const AuditLogs = () => {
     setLoading(true);
     setError(null);
     try {
-      const params: Record<string, unknown> = { page, limit: pageSize };
+      const params: Record<string, string | number | undefined> = { page, limit: pageSize };
       // map client filter names to server expected query names
       const collectionName = filterCollection || search;
       if (collectionName) params.collectionName = collectionName;
@@ -54,8 +56,8 @@ const AuditLogs = () => {
       setItems(data?.items || []);
       setTotal(data?.total || 0);
     } catch (err: unknown) {
-      const maybeErr = err as Error | undefined;
-      setError(maybeErr?.message ?? (typeof err === 'string' ? err : 'Failed to load audit logs'));
+      const apiErr = (err && typeof err === 'object') ? (handleApiError(err) as { message: string }) : undefined;
+      setError(apiErr?.message ?? 'Failed to load audit logs');
     } finally {
       setLoading(false);
     }

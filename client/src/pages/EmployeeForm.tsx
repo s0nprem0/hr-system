@@ -26,7 +26,7 @@ const EmployeeForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
-  const navTimeout = useRef<number | null>(null);
+  const navTimeout = useRef<ReturnType<typeof setTimeout> | number | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
@@ -96,25 +96,34 @@ const EmployeeForm = () => {
       if (first === 'password') passwordRef.current?.focus();
       return;
     }
-    const payload: Record<string, unknown> = { name, email, role, profile: { department: departmentId } };
+    type EmployeePayload = {
+      name: string;
+      email: string;
+      role: Role;
+      profile: { department?: string | undefined };
+      password?: string;
+      active?: boolean;
+    };
+
+    const payload: EmployeePayload = { name, email, role, profile: { department: departmentId } };
     if (!isEdit && password) payload.password = password;
     if (isEdit && password) payload.password = password; // allow changing password
 
     setSaving(true);
     try {
       if (isEdit && params.id) {
-        (payload as Record<string, unknown>).active = active;
+        payload.active = active;
         await api.put(`/api/employees/${params.id}`, payload);
         setSuccess('Employee updated');
         toast.showToast('Employee updated', 'success');
         // give user a chance to see success message
-        navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900) as unknown as number;
+        navTimeout.current = window.setTimeout(() => navigate(`/employees/${params.id}`), 900);
       } else {
         const res = await api.post('/api/employees', { ...payload, password, active });
         const created = res.data?.data;
         setSuccess('Employee created');
         toast.showToast('Employee created', 'success');
-        navTimeout.current = window.setTimeout(() => navigate(`/employees/${created?._id || ''}`), 900) as unknown as number;
+        navTimeout.current = window.setTimeout(() => navigate(`/employees/${created?._id || ''}`), 900);
       }
     } catch (err: unknown) {
       const apiErr = handleApiError(err);
@@ -140,7 +149,7 @@ const EmployeeForm = () => {
   useEffect(() => {
     return () => {
       if (navTimeout.current) {
-        clearTimeout(navTimeout.current as unknown as number);
+        clearTimeout(navTimeout.current);
       }
     };
 

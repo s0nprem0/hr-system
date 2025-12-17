@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../utils/api';
-import axios from 'axios';
+import handleApiError from '../utils/handleApiError';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button, Input, CenteredCard } from '../components/ui';
@@ -42,13 +42,8 @@ const Login = () => {
         setError(res.data?.error?.message || res.data?.error || 'Login failed');
       }
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error?.message || err.response?.data?.error || err.message || 'Login failed');
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Login failed');
-      }
+      const apiErr = handleApiError(err);
+      setError(apiErr.message);
     } finally {
       setLoading(false);
     }

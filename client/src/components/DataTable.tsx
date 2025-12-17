@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
 import { type ReactNode } from 'react';
 import { Button, Card } from './ui';
+import type { JSONValue } from '../types/json';
+
+function getCellValue<T extends object>(item: T, key: keyof T): JSONValue | undefined {
+  return (item as unknown as Record<string, JSONValue>)[String(key)];
+}
 
 export interface Column<T = object> {
   key: keyof T & string;
@@ -34,7 +39,7 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
-      <Card className="text-center py-8 text-[var(--cp-muted)]">
+      <Card className="text-center py-8 text-(--cp-muted)">
         {emptyMessage}
       </Card>
     );
@@ -47,7 +52,7 @@ export function DataTable<T extends object>({
         role="table"
         aria-label="Data table"
       >
-        <thead className="bg-[var(--cp-surface)]">
+        <thead className="bg-(--cp-surface)">
           <tr>
             {columns.map((col) => (
               <th
@@ -65,9 +70,7 @@ export function DataTable<T extends object>({
 
         <tbody>
           {data.map((item) => {
-            const rowKey = String(
-              (item as Record<string, unknown>)[keyField as string]
-            );
+            const rowKey = String(getCellValue(item, keyField) ?? '');
 
             return (
               <tr
@@ -81,9 +84,7 @@ export function DataTable<T extends object>({
                   >
                     {col.render
                       ? col.render(item)
-                      : String(
-                          (item as Record<string, unknown>)[col.key] ?? '—'
-                        )}
+                      : String(getCellValue(item, col.key) ?? '—')}
                   </td>
                 ))}
 
