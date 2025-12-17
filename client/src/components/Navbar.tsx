@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
   const auth = useAuth();
+
+  const navigate = useNavigate()
 
   return (
     <header className="w-full app-header sticky top-0 z-20">
@@ -14,26 +16,31 @@ const Navbar = () => {
               <>
                 <Link to="/dashboard" className="muted">Dashboard</Link>
                 {/* Role-based links */}
-                {auth?.hasRole && auth.hasRole('admin') && (
-                  <>
-                    <Link to="/users" className="muted">Users</Link>
-                  </>
+                {auth?.can && auth.can('manageUsers') && (
+                  <Link to="/users" className="muted">Users</Link>
                 )}
-                {auth?.hasRole && auth.hasRole('hr') && (
-                  <>
-                    <Link to="/employees" className="muted">Employees</Link>
-                    <Link to="/departments" className="muted">Departments</Link>
-                    <Link to="/payroll" className="muted">Payroll</Link>
-                  </>
+                {auth?.can && auth.can('manageEmployees') && (
+                  <Link to="/employees" className="muted">Employees</Link>
                 )}
-                {auth?.hasRole && auth.hasRole('employee') && (
-                  <>
-                    <Link to="/profile" className="muted">Profile</Link>
-                  </>
+                {auth?.can && auth.can('manageDepartments') && (
+                  <Link to="/departments" className="muted">Departments</Link>
                 )}
+                {auth?.can && auth.can('managePayroll') && (
+                  <Link to="/payroll" className="muted">Payroll</Link>
+                )}
+                {/* Profile is visible to any logged-in user */}
+                <Link to="/profile" className="muted">Profile</Link>
 
                 <span className="muted">{auth.user.name}</span>
-                <button className="btn" onClick={() => { auth.logout(); window.location.href = '/login'; }}>Logout</button>
+                <button
+                  className="btn"
+                  onClick={() => {
+                    auth.logout()
+                    navigate('/login')
+                  }}
+                >
+                  Logout
+                </button>
               </>
             ) : (
               <Link to="/login" className="btn">Login</Link>
