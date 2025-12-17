@@ -12,7 +12,8 @@ if (isProduction) {
   const transport = pino.transport({
     target: 'pino-pretty',
     options: {
-      translateTime: 'yyyy-mm-dd HH:MM:ss',
+      translateTime: 'SYS:standard',
+      ignore: 'pid,hostname',
       singleLine: false,
       colorize: true,
     },
