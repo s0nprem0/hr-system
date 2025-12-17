@@ -12,6 +12,7 @@ import PayrollForm from './pages/PayrollForm';
 import Users from './pages/Users';
 import UserForm from './pages/UserForm';
 import Profile from './pages/Profile';
+import AuditLogs from './pages/AuditLogs';
 import PrivateRoutes from './utils/PrivateRoutes';
 import Navbar from './components/Navbar';
 import Unauthorized from './pages/Unauthorized';
@@ -156,6 +157,14 @@ function App() {
               element={
                 <PrivateRoutes requiredRole={["admin", "hr", "employee"]}>
                   <Profile />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/audits"
+              element={
+                <PrivateRoutes requiredRole={["admin", "hr"]}>
+                  <AuditLogs />
                 </PrivateRoutes>
               }
             />

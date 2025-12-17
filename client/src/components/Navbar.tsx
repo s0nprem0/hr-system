@@ -82,6 +82,11 @@ const Navbar = () => {
                     ) : (
                       <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Payroll</span>
                     )}
+                    {auth.can('viewAuditLogs') ? (
+                      <NavLink onClick={() => setOpen(false)} to="/audits" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Audit Logs</NavLink>
+                    ) : (
+                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Audit Logs</span>
+                    )}
                   </>
                 ) : null}
 

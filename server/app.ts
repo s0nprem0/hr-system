@@ -8,7 +8,9 @@ import usersRouter from './routes/users';
 import employeesRouter from './routes/employees';
 import departmentsRouter from './routes/departments';
 import payrollRouter from './routes/payroll';
+import auditsRouter from './routes/audits';
 import errorHandler from './middleware/errorHandler';
+
 
 export default function createApp() {
   const app = express();
@@ -29,6 +31,7 @@ export default function createApp() {
   app.use('/api/employees', employeesRouter);
   app.use('/api/departments', departmentsRouter);
   app.use('/api/payroll', payrollRouter);
+  app.use('/api/audits', auditsRouter);
 
   app.get('/health', (req, res) => {
     const uptime = process.uptime();
