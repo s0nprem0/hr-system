@@ -10,6 +10,9 @@ module.exports = {
       colors: {
         primary: 'var(--cp-primary)',
         'primary-foreground': 'var(--cp-primary-foreground)',
+        cta: 'var(--cp-cta)',
+        'cta-foreground': 'var(--cp-cta-foreground)',
+        'cta-hover': 'var(--cp-cta-hover)',
         background: 'var(--cp-bg)',
         surface: 'var(--cp-surface)',
         muted: 'var(--cp-muted)',
@@ -19,6 +22,15 @@ module.exports = {
         success: 'var(--cp-success)',
         warning: 'var(--cp-warning)',
         danger: 'var(--cp-danger)',
+      },
+      ringColor: {
+        DEFAULT: 'var(--cp-cta)',
+      },
+      ringWidth: {
+        DEFAULT: '2px',
+      },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
       },
     },
   },
