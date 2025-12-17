@@ -61,8 +61,8 @@ const Departments = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="container-main py-6">
+      <div className="space-y-6">
         <div className="card">
           <PageHeader
             title="Departments"

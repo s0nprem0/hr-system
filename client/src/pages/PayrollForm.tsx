@@ -110,9 +110,9 @@ const PayrollForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-3xl mx-auto">
-        <form onSubmit={handleSubmit} className="card space-y-4">
+    <div className="container-main py-6">
+      <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold mb-4">{isEdit ? 'Edit' : 'Create'} Payroll Entry</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}

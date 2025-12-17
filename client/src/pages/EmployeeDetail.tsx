@@ -67,9 +67,9 @@ const EmployeeDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="card mb-4">
+    <div className="container-main py-6">
+      <div className="space-y-6">
+        <div className="card mb-4 max-w-4xl mx-auto">
           <h1 className="text-2xl font-bold">Employee Detail</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}

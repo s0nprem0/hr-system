@@ -13,8 +13,8 @@ const Dashboard = () => {
   const role = auth?.user?.role;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="container-main py-6">
+      <div className="space-y-6">
         <div className="card mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">{role?.toUpperCase() ?? 'Dashboard'}</h1>
