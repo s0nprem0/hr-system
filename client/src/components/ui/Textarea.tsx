@@ -7,7 +7,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   label?: React.ReactNode;
 }
 
-const textareaClasses = cva('mt-1 block w-full px-3 py-2 border rounded-md bg-surface text-[var(--cp-text)] border-border', {
+const textareaClasses = cva('mt-1 block w-full px-3 py-2 border rounded-md bg-[var(--cp-surface)] text-[var(--cp-text)] placeholder:text-[var(--cp-muted)] border-[var(--cp-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cp-cta)] disabled:opacity-70 disabled:cursor-not-allowed', {
   variants: {
     variant: {
       default: '',

@@ -7,11 +7,11 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   label?: React.ReactNode;
 }
 
-const selectClasses = cva('mt-1 block w-full px-3 py-2 border rounded-md bg-surface text-[var(--cp-text)] border-border', {
+const selectClasses = cva('mt-1 block w-full px-3 py-2 border rounded-md bg-[var(--cp-surface)] text-[var(--cp-text)] placeholder:text-[var(--cp-muted)] border-[var(--cp-border)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cp-cta)] disabled:opacity-70 disabled:cursor-not-allowed', {
   variants: {
     variant: {
       default: '',
-      subtle: 'bg-[color:var(--cp-surface)]',
+      subtle: 'bg-[color-mix(in srgb, var(--cp-surface) 96%, var(--cp-bg) 4%)]',
     },
   },
   defaultVariants: { variant: 'default' },
