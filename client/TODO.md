@@ -22,7 +22,7 @@ Current status of high-priority refactors and improvements (tracked):
   - Replace inline styles, magic strings, and duplicated markup with reusable components.
 - [ ] Add E2E smoke tests
   - Add Playwright or Cypress smoke tests for core flows (login, lists, forms).
-- [ ] Tailwind theme & tokens cleanup
+- [x] Tailwind theme & tokens cleanup
   - Move design tokens into `client/src/styles/tokens.css` and ensure `tailwind.config.js` imports them.
 - [ ] CI / lint / format enforcement
   - Add GitHub Actions pipeline to run `bun test`, `eslint`, and `prettier`; enable pre-commit hooks.
