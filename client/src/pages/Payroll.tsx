@@ -3,6 +3,7 @@ import { PageHeader } from '../components/PageHeader';
 import { DataTable, type Column } from '../components/DataTable';
 import { Pagination } from '../components/Pagination';
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper';
+import PageContainer from '../components/layout/PageContainer';
 
 type PayrollEntry = {
   _id: string;
@@ -61,32 +62,30 @@ const Payroll = () => {
   ];
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <div className="card">
-          <PageHeader
-            title="Payroll"
-            addButton={{ to: '/payroll/new', text: 'Add Payroll Entry' }}
-            search={{ value: search, onChange: setSearch, placeholder: 'Search by employee' }}
-          />
+    <PageContainer>
+      <div className="card">
+        <PageHeader
+          title="Payroll"
+          addButton={{ to: '/payroll/new', text: 'Add Payroll Entry' }}
+          search={{ value: search, onChange: setSearch, placeholder: 'Search by employee' }}
+        />
 
-          <LoadingErrorWrapper loading={loading} error={error}>
-            <DataTable
-              data={items}
-              columns={columns}
-              actions={actions}
-              emptyMessage="No payroll entries found"
-            />
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-            />
-          </LoadingErrorWrapper>
-        </div>
+        <LoadingErrorWrapper loading={loading} error={error}>
+          <DataTable
+            data={items}
+            columns={columns}
+            actions={actions}
+            emptyMessage="No payroll entries found"
+          />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+          />
+        </LoadingErrorWrapper>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

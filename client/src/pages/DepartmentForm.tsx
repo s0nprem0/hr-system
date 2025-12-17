@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
+import PageContainer from '../components/layout/PageContainer';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
@@ -78,9 +79,8 @@ const DepartmentForm = () => {
   };
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
+    <PageContainer>
+      <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold mb-4">{isEdit ? 'Edit' : 'Create'} Department</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}
@@ -98,8 +98,7 @@ const DepartmentForm = () => {
             <Button type="submit" variant="primary" loading={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

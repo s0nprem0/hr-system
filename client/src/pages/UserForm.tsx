@@ -8,6 +8,7 @@ import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Checkbox from '../components/ui/Checkbox';
 import Button from '../components/ui/Button';
+import PageContainer from '../components/layout/PageContainer';
 
 type Role = 'admin' | 'hr' | 'employee';
 type User = { _id: string; name?: string; email: string; role?: Role; active?: boolean };
@@ -94,9 +95,8 @@ const UserForm = () => {
   };
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
+    <PageContainer>
+      <form onSubmit={handleSubmit} className="card space-y-4 max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold mb-4">{isEdit ? 'Edit' : 'Create'} User</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}
@@ -133,8 +133,7 @@ const UserForm = () => {
             <Button type="submit" variant="primary" loading={saving}>{saving ? 'Saving…' : 'Save'}</Button>
           </div>
         </form>
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

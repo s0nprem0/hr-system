@@ -7,6 +7,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import type { AuthLoginResponse } from '@hr/shared';
 import { safeSetItem } from '../utils/storage';
+import PageContainer from '../components/layout/PageContainer';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -49,25 +50,23 @@ const Login = () => {
   };
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <div className="card w-full max-w-md mx-auto p-6">
-          <h2 className="text-2xl font-semibold mb-4">Login</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input id="email" label="Email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <Input id="password" label="Password" type="password" placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            {error && <div className="text-sm text-danger">{error}</div>}
-            <div className="flex justify-end">
-              <Button type="submit" variant="primary" loading={loading}>Login</Button>
-            </div>
-          </form>
-        </div>
+    <PageContainer>
+      <div className="card w-full max-w-md mx-auto p-6">
+        <h2 className="text-2xl font-semibold mb-4">Login</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Input id="email" label="Email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div>
+            <Input id="password" label="Password" type="password" placeholder="••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          {error && <div className="text-sm text-danger">{error}</div>}
+          <div className="flex justify-end">
+            <Button type="submit" variant="primary" loading={loading}>Login</Button>
+          </div>
+        </form>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import PageContainer from '../components/layout/PageContainer';
 
 const Dashboard = () => {
   const auth = useAuth();
@@ -13,9 +14,8 @@ const Dashboard = () => {
   const role = auth?.user?.role;
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <div className="card mb-6 flex justify-between items-center">
+    <PageContainer>
+      <div className="card mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">{role?.toUpperCase() ?? 'Dashboard'}</h1>
             <p className="muted">Welcome, {auth?.user?.name}</p>
@@ -78,8 +78,7 @@ const Dashboard = () => {
             <p className="muted">No role assigned. Contact administrator.</p>
           </div>
         )}
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

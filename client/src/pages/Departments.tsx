@@ -3,6 +3,7 @@ import { PageHeader } from '../components/PageHeader';
 import { DataTable, type Column } from '../components/DataTable';
 import { Pagination } from '../components/Pagination';
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper';
+import PageContainer from '../components/layout/PageContainer';
 
 interface Department {
   _id: string;
@@ -61,32 +62,30 @@ const Departments = () => {
   ];
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <div className="card">
-          <PageHeader
-            title="Departments"
-            addButton={{ to: '/departments/new', text: 'Add Department' }}
-            search={{ value: search, onChange: setSearch }}
-          />
+    <PageContainer>
+      <div className="card">
+        <PageHeader
+          title="Departments"
+          addButton={{ to: '/departments/new', text: 'Add Department' }}
+          search={{ value: search, onChange: setSearch }}
+        />
 
-          <LoadingErrorWrapper loading={loading} error={error}>
-            <DataTable
-              data={items}
-              columns={columns}
-              actions={actions}
-              emptyMessage="No departments found"
-            />
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-            />
-          </LoadingErrorWrapper>
-        </div>
+        <LoadingErrorWrapper loading={loading} error={error}>
+          <DataTable
+            data={items}
+            columns={columns}
+            actions={actions}
+            emptyMessage="No departments found"
+          />
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+          />
+        </LoadingErrorWrapper>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

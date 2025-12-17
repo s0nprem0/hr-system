@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import PageContainer from '../components/layout/PageContainer';
 import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
@@ -67,9 +68,8 @@ const EmployeeDetail = () => {
   };
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <div className="card mb-4 max-w-4xl mx-auto">
+    <PageContainer>
+      <div className="card mb-4 max-w-4xl mx-auto">
           <h1 className="text-2xl font-bold">Employee Detail</h1>
           {loading && <div className="muted">Loading...</div>}
           {error && <div className="text-danger">{error}</div>}
@@ -89,8 +89,7 @@ const EmployeeDetail = () => {
             <button className="btn text-danger" onClick={handleDelete}>Delete</button>
           </div>
         </div>
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

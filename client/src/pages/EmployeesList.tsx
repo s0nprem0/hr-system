@@ -4,6 +4,7 @@ import { PageHeader } from '../components/PageHeader';
 import { DataTable, type Column } from '../components/DataTable';
 import { Pagination } from '../components/Pagination';
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper';
+import PageContainer from '../components/layout/PageContainer';
 
 interface Employee {
   _id: string;
@@ -81,36 +82,34 @@ const EmployeesList = () => {
   ];
 
   return (
-    <div className="container-main py-6">
-      <div className="space-y-6">
-        <div className="card">
-          <PageHeader
-            title="Employees"
-            addButton={auth?.can && auth.can('manageEmployees') ? { to: '/employees/new', text: 'Add Employee' } : undefined}
-            search={{ value: search, onChange: setSearch }}
+    <PageContainer>
+      <div className="card">
+        <PageHeader
+          title="Employees"
+          addButton={auth?.can && auth.can('manageEmployees') ? { to: '/employees/new', text: 'Add Employee' } : undefined}
+          search={{ value: search, onChange: setSearch }}
+        />
+
+        <LoadingErrorWrapper loading={loading} error={error}>
+          <DataTable
+            data={items}
+            columns={columns}
+            actions={actions}
+            emptyMessage="No employees found"
           />
-
-          <LoadingErrorWrapper loading={loading} error={error}>
-            <DataTable
-              data={items}
-              columns={columns}
-              actions={actions}
-              emptyMessage="No employees found"
-            />
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-            />
-          </LoadingErrorWrapper>
-        </div>
-
-        <p className="muted mt-4">
-          Signed in as: {auth?.user?.name} ({auth?.user?.role})
-        </p>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+          />
+        </LoadingErrorWrapper>
       </div>
-    </div>
+
+      <p className="muted mt-4">
+        Signed in as: {auth?.user?.name} ({auth?.user?.role})
+      </p>
+    </PageContainer>
   );
 };
 

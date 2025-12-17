@@ -5,10 +5,13 @@ import api from '../utils/api';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage';
 
 // Define types
+import type { Role } from './AuthPermissions';
+import { getPermissions } from './AuthPermissions';
+
 interface User {
     _id: string;
     name: string;
-    role: 'admin' | 'hr' | 'employee';
+    role: Role;
 }
 
 interface AuthContextType {
@@ -27,34 +30,6 @@ const userContext = createContext<AuthContextType | null>(null);
 export function AuthContext({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const getPermissions = (role: User['role'] | null) => {
-        // Centralized permission map by role. Update as needed.
-        const map: Record<User['role'], Record<string, boolean>> = {
-            admin: {
-                manageUsers: true,
-                manageEmployees: true,
-                manageDepartments: true,
-                managePayroll: true,
-                viewAuditLogs: true,
-            },
-            hr: {
-                manageUsers: false,
-                manageEmployees: true,
-                manageDepartments: true,
-                managePayroll: true,
-                viewAuditLogs: true,
-            },
-            employee: {
-                manageUsers: false,
-                manageEmployees: false,
-                manageDepartments: false,
-                managePayroll: false,
-                viewAuditLogs: false,
-            },
-        };
-        return role ? map[role] ?? {} : {};
-    };
 
     const permissions = getPermissions(user?.role ?? null);
 

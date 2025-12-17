@@ -1,5 +1,6 @@
 import { useDataList } from '../utils/useDataList';
 import { PageHeader } from '../components/PageHeader';
+import PageContainer from '../components/layout/PageContainer';
 import { DataTable, type Column } from '../components/DataTable';
 import { Pagination } from '../components/Pagination';
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper';
@@ -67,7 +68,7 @@ const Users = () => {
   ];
 
   return (
-    <div className="container-main py-6">
+    <PageContainer>
       <div className="space-y-6">
         <div className="card">
           <PageHeader
@@ -92,7 +93,7 @@ const Users = () => {
           </LoadingErrorWrapper>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
