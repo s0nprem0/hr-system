@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const Navbar = () => {
   const auth = useAuth();
@@ -8,6 +8,34 @@ const Navbar = () => {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [userMenu, setUserMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const userRef = useRef<HTMLDivElement | null>(null)
+
+  // Close menus when clicking outside or pressing Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        setUserMenu(false)
+      }
+    }
+    function onDocClick(e: MouseEvent) {
+      const target = e.target as Node
+      if (userRef.current && !userRef.current.contains(target)) {
+        setUserMenu(false)
+      }
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        // keep mobile menu closed when clicking outside
+        setOpen(false)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('click', onDocClick)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('click', onDocClick)
+    }
+  }, [])
 
   return (
     <header className="w-full app-header sticky top-0 z-20">
@@ -22,7 +50,7 @@ const Navbar = () => {
             >
               {open ? 'Close' : 'Menu'}
             </button>
-            <div className={`${open ? 'block' : 'hidden'} md:flex md:items-center md:gap-3`}
+            <div ref={menuRef} className={`${open ? 'block' : 'hidden'} md:flex md:items-center md:gap-3`}
             >
             {auth?.user ? (
               <>
@@ -31,22 +59,41 @@ const Navbar = () => {
                 {/** Render links with disabled styling when permission missing */}
                 {auth?.can ? (
                   <>
-                    <NavLink to="/users" className={({isActive}) => (auth.can('manageUsers') ? (isActive ? 'muted font-semibold' : 'muted') : 'muted opacity-50 cursor-not-allowed')}>Users</NavLink>
-                    <NavLink to="/employees" className={({isActive}) => (auth.can('manageEmployees') ? (isActive ? 'muted font-semibold' : 'muted') : 'muted opacity-50 cursor-not-allowed')}>Employees</NavLink>
-                    <NavLink to="/departments" className={({isActive}) => (auth.can('manageDepartments') ? (isActive ? 'muted font-semibold' : 'muted') : 'muted opacity-50 cursor-not-allowed')}>Departments</NavLink>
-                    <NavLink to="/payroll" className={({isActive}) => (auth.can('managePayroll') ? (isActive ? 'muted font-semibold' : 'muted') : 'muted opacity-50 cursor-not-allowed')}>Payroll</NavLink>
+                    {auth.can('manageUsers') ? (
+                      <NavLink onClick={() => setOpen(false)} to="/users" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Users</NavLink>
+                    ) : (
+                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Users</span>
+                    )}
+
+                    {auth.can('manageEmployees') ? (
+                      <NavLink onClick={() => setOpen(false)} to="/employees" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Employees</NavLink>
+                    ) : (
+                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Employees</span>
+                    )}
+
+                    {auth.can('manageDepartments') ? (
+                      <NavLink onClick={() => setOpen(false)} to="/departments" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Departments</NavLink>
+                    ) : (
+                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Departments</span>
+                    )}
+
+                    {auth.can('managePayroll') ? (
+                      <NavLink onClick={() => setOpen(false)} to="/payroll" className={({ isActive }) => (isActive ? 'muted font-semibold' : 'muted')}>Payroll</NavLink>
+                    ) : (
+                      <span aria-disabled="true" tabIndex={-1} className="muted opacity-50 cursor-not-allowed">Payroll</span>
+                    )}
                   </>
                 ) : null}
 
-                <NavLink to="/profile" className={({isActive}) => isActive ? 'muted font-semibold' : 'muted'}>Profile</NavLink>
+                <NavLink onClick={() => setOpen(false)} to="/profile" className={({isActive}) => isActive ? 'muted font-semibold' : 'muted'}>Profile</NavLink>
 
-                <div className="relative">
+                <div ref={userRef} className="relative">
                   <button className="muted" aria-haspopup="true" aria-expanded={userMenu} onClick={() => setUserMenu(!userMenu)}>
                     {auth.user.name}
                   </button>
                   {userMenu && (
-                    <div className="absolute right-0 mt-2 bg-white shadow rounded p-2">
-                      <NavLink to="/profile" className="block px-2 py-1">Profile</NavLink>
+                    <div role="menu" aria-label="User menu" className="absolute right-0 mt-2 bg-white shadow rounded p-2">
+                      <NavLink onClick={() => { setUserMenu(false); setOpen(false) }} to="/profile" className="block px-2 py-1">Profile</NavLink>
                       <button className="block px-2 py-1 w-full text-left" onClick={() => { setUserMenu(false); auth.logout(); navigate('/login') }}>Logout</button>
                     </div>
                   )}
