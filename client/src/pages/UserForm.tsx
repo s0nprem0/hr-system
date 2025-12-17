@@ -4,10 +4,7 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Checkbox from '../components/ui/Checkbox';
-import Button from '../components/ui/Button';
+import { Input, Select, Checkbox, Button } from '../components/ui';
 import PageContainer from '../components/layout/PageContainer';
 
 type Role = 'admin' | 'hr' | 'employee';

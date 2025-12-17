@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import Dialog from '../components/ui/Dialog';
-import Button from '../components/ui/Button';
+import { Dialog, Button } from '../components/ui';
 
 type ConfirmResolve = (value: boolean) => void;
 interface ConfirmState {

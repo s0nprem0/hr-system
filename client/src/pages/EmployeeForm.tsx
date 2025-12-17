@@ -5,10 +5,7 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Label from '../components/ui/Label';
-import Checkbox from '../components/ui/Checkbox';
+import { Input, Select, Label, Checkbox } from '../components/ui';
 
 const EmployeeForm = () => {
   const navigate = useNavigate();

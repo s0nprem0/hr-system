@@ -5,9 +5,7 @@ import api from '../utils/api';
 import handleApiError from '../utils/handleApiError';
 import { isValidMongoId } from '../utils/validators';
 import { useToast } from '../context/ToastContext';
-import Input from '../components/ui/Input';
-import Textarea from '../components/ui/Textarea';
-import Button from '../components/ui/Button';
+import { Input, Textarea, Button } from '../components/ui';
 
 const DepartmentForm = () => {
   const navigate = useNavigate();
