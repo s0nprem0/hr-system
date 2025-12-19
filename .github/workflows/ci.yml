@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: "ci-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
@@ -20,7 +20,9 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1'
+          bun-version: 'latest'
+      - name: Debug: Bun version
+        run: bun --version
       - name: Cache Bun & server deps
         uses: actions/cache@v4
         with:
@@ -53,7 +55,9 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1'
+          bun-version: 'latest'
+      - name: Debug: Bun version
+        run: bun --version
       - name: Cache client deps (bun)
         uses: actions/cache@v4
         with:
