@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 
 concurrency:
@@ -41,9 +41,9 @@ jobs:
       - name: Typecheck (server)
         working-directory: server
         run: bun run typecheck --if-present
-      - name: Run server tests (Jest)
+      - name: Run server tests (Jest via Bun)
         working-directory: server
-        run: npm test
+        run: bun run test
 
   client:
     name: Client — Node / Vite
@@ -74,12 +74,13 @@ jobs:
       - name: Typecheck (client)
         working-directory: client
         run: bun run typecheck --if-present
-      - name: Run client tests
+      - name: Run client tests (Bun + Node/Vitest)
         working-directory: client
         run: |
-          # prefer bun test if Vitest is available; fallback to npm
-          if command -v bun >/dev/null 2>&1; then
-            bun test || npm test
-          else
+          # Run Bun's test runner first (uses client/tests/setup-bun.ts which re-exports shared setup)
+          bun test
+          # Also run Vitest under Node to ensure parity; install node deps then run vitest
+          if command -v npm >/dev/null 2>&1; then
+            npm install
             npm test
           fi
