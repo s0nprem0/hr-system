@@ -45,82 +45,179 @@ cp .env.example .env
 
 PowerShell (recommended for Windows users):
 
-```pwsh
+````pwsh
 # Server
 cd server
 bun install # or `npm install`
+## HR System — README
+
+This repository contains a sample HR management system with a React + Vite frontend in `client/` and an Express-based API in `server/`. The project demonstrates role-based access, JWT auth, audit logging, and standard developer tooling.
+
+---
+
+## Quick Start (Windows)
+
+Prerequisites:
+- Install Bun (recommended) or Node.js (16+).
+- MongoDB running locally or accessible via `MONGO_URI`.
+
+1) Copy environment files and set secrets:
+
+```pwsh
+copy .env.example .env
+# Edit `.env` and set at minimum: JWT_KEY, MONGO_URI
+````
+
+2. Install dependencies:
+
+```pwsh
+# Server
+cd server
+bun install # or npm install
 
 # Client
 cd ../client
-bun install # or `npm install`
+bun install # or npm install
 ```
 
-3. Start the server and client in development:
+3. Run dev servers (two terminals):
 
 ```pwsh
-# From `server/`
-bun run dev # or `npm run dev`
+# Terminal 1: server
+cd server
+bun run dev # or npm run dev
 
-# From `client/`
-bun run dev # or `npm run dev`
+# Terminal 2: client
+cd client
+bun run dev # or npm run dev
 ```
 
-## 🔧 Environment Variables
+The client defaults to `http://localhost:5173` and the server to `http://localhost:3000` (see server config).
 
-The project uses environment variables for configuration. See `.env.example` for the full list. Important variables:
+---
 
-- `JWT_KEY` - Secret used to sign JWT tokens (required).
-- `MONGO_URI` - MongoDB connection string (defaults to `mongodb://127.0.0.1:27017/hr-system`).
-- `CLIENT_URL` - Frontend origin allowed by CORS (defaults to `http://localhost:5173`).
+## Installation Notes (alternative / Unix)
 
-Seed account env vars (optional for local dev):
+Use the same steps above but replace `pwsh` commands with POSIX equivalents:
 
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-- `HR_EMAIL`, `HR_PASSWORD`
-- `EMP_EMAIL`, `EMP_PASSWORD`
+```bash
+cp .env.example .env
+cd server && bun install
+cd ../client && bun install
+```
 
-## 🧪 Seeding Development Users
+If you prefer `npm`/`pnpm`/`yarn`, replace `bun install` with your package manager of choice.
 
-To create development users (admin/hr/employee) run the seeder from the `server` folder:
+---
+
+## Cleanup & Reset
+
+- Remove dependencies and caches (Windows PowerShell):
+
+```pwsh
+# From project root
+Remove-Item -Recurse -Force server\node_modules, client\node_modules
+bun cache clear
+```
+
+- Reinstall:
+
+```pwsh
+cd server; bun install
+cd ../client; bun install
+```
+
+- Reset database (drop and reseed) — use with caution:
 
 ```pwsh
 cd server
-bun run seed # or `npm run seed`
+# Depending on your scripts, this may drop and recreate dev data
+bun run seed # or npm run seed
 ```
 
-The seeder uses default emails/passwords but will pick up the seed env vars if present.
+- Remove build artifacts:
 
-## ✅ API Notes
+```pwsh
+Remove-Item -Recurse -Force client\dist, server\dist
+```
 
-- Authentication endpoints are under `/api/auth`.
-- Authentication endpoints (login, refresh, logout) are rate-limited to protect against brute-force attacks.
-- Protected routes expect an `Authorization: Bearer <token>` header.
+---
 
-## 🧰 Developer Experience & Scripts
+## Testing, Linting & Formatting
 
-Server scripts (in `server/package.json`):
+- Client tests (Vitest) and setup live in `client/tests`:
 
-- `dev` - Run server in development using `ts-node-dev` (hot reload).
-- `start` - Run compiled server code (production).
-- `seed` - Run `userSeed.ts` to populate dev users.
+```pwsh
+cd client
+bun run test # or npm run test
+```
 
-Client scripts (in `client/package.json`):
+- Server tests (Jest) live in `server/tests`:
 
-- `dev` - Start Vite dev server.
-- `build` - Build the client app.
+```pwsh
+cd server
+bun run test # or npm run test
+```
 
-## ✅ Recommended Next Steps
+- Lint / format (if configured):
 
-- Add a small CI workflow to run TypeScript build and lint on PRs.
-- Add basic unit/integration tests for auth and middleware.
-- Consider adding refresh-token support and rotating JWTs for improved security.
+```pwsh
+# Client
+cd client
+bun run lint
+bun run format
 
-## 🧾 Contributing
+# Server
+cd server
+bun run lint
+bun run format
+```
 
-Please open issues or PRs. When contributing:
+---
 
-- Keep changes focused and small.
-- Add tests where applicable.
-- Run lint and TypeScript checks before committing.
+## Environment Variables
 
-If you'd like, I can add a GitHub Actions workflow and basic tests next.
+See `.env.example` for the full list. Key variables:
+
+- `JWT_KEY` — signing secret for JWTs (required)
+- `MONGO_URI` — MongoDB connection string (defaults to `mongodb://127.0.0.1:27017/hr-system`)
+- `CLIENT_URL` — frontend origin for CORS (defaults to `http://localhost:5173`)
+
+Seed account env vars (optional): `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `HR_EMAIL`, `HR_PASSWORD`, `EMP_EMAIL`, `EMP_PASSWORD`.
+
+---
+
+## Seeding Development Users
+
+```pwsh
+cd server
+bun run seed # or npm run seed
+```
+
+This populates example admin/hr/employee accounts. Modify env vars to change credentials.
+
+---
+
+## Troubleshooting
+
+- If you see connection errors, confirm `MONGO_URI` and that MongoDB is running.
+- On Windows, prefer PowerShell for the provided commands. If using WSL, adapt commands accordingly.
+- If ports conflict, update `CLIENT_URL` or server port in environment/config.
+- If using Node instead of Bun, ensure package scripts and dev tooling are compatible (some commands may require small adjustments).
+
+Common fixes:
+
+- Delete `node_modules` and reinstall.
+- Clear Bun cache: `bun cache clear`.
+- Ensure `.env` is present and not ignored by mistake.
+
+---
+
+## Technical Notes
+
+- Frontend: React + Vite, TypeScript, Tailwind CSS. Source in `client/src`.
+- Backend: Express + TypeScript. Source in `server/` with routes in `server/routes` and controllers in `server/controllers`.
+- Auth: JWT-based with refresh token handling and permission middleware in `server/middleware`.
+- Audit logging: Critical changes are stored in `server/models/AuditLog.ts`.
+
+---
