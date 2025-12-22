@@ -18,6 +18,7 @@ const api = axios.create({
 	headers: {
 		'Content-Type': 'application/json',
 	},
+	withCredentials: true, // include httpOnly refresh cookie
 })
 
 // Request: attach token if present
@@ -55,21 +56,21 @@ function onRefreshFailed(err: unknown) {
 }
 
 async function refreshAuth(): Promise<string> {
-	const refreshToken = safeGetItem('refreshToken')
-	if (!refreshToken)
-		return Promise.reject({
-			response: { data: { error: { message: 'No refresh token' } } },
-			status: 401,
-		})
-
+	// Server stores refresh token in httpOnly cookie; call refresh endpoint without body
 	const resp = await axios.post<ApiResponse<AuthRefreshResponse>>(
 		`${API_URL}/api/auth/refresh`,
-		{ refreshToken }
+		{},
+		{ withCredentials: true }
 	)
 
 	const data = resp.data
-	function isApiErrorResponse<T>(r: ApiResponse<T>): r is { success: false; error: { message: string; details?: unknown } } {
-		return (r as ApiResponse<T>).success === false && typeof (r as unknown as Record<string, unknown>)['error'] === 'object'
+	function isApiErrorResponse<T>(
+		r: ApiResponse<T>
+	): r is { success: false; error: { message: string; details?: unknown } } {
+		return (
+			(r as ApiResponse<T>).success === false &&
+			typeof (r as unknown as Record<string, unknown>)['error'] === 'object'
+		)
 	}
 
 	if (!data?.success) {
@@ -88,8 +89,7 @@ async function refreshAuth(): Promise<string> {
 	}
 
 	const newToken = data.data.token
-	const newRefresh = data.data.refreshToken
-
+	// server now returns only `token` and manages refresh cookie itself
 	if (!newToken)
 		return Promise.reject({
 			response: {
@@ -99,7 +99,7 @@ async function refreshAuth(): Promise<string> {
 		})
 
 	safeSetItem('token', newToken)
-	if (newRefresh) safeSetItem('refreshToken', newRefresh)
+	// refresh token is stored in httpOnly cookie by server; do not persist it in storage
 	return newToken
 }
 
@@ -129,7 +129,7 @@ api.interceptors.response.use(
 					.catch((refreshErr) => {
 						isRefreshing = false
 						safeRemoveItem('token')
-						safeRemoveItem('refreshToken')
+						// refresh token is stored in httpOnly cookie; no client-side cleanup required
 						onRefreshFailed(refreshErr)
 						if (typeof window !== 'undefined')
 							window.dispatchEvent(

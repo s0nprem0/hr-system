@@ -280,6 +280,52 @@ Development notes:
 - Use `bun` (or `npm`) to install and run scripts defined in `client/package.json` and `server/package.json`.
 - Seed dev users with `bun run seed` from `server/` to get accounts for the demo.
 
+### Refresh token (httpOnly cookie) flow
+
+This project uses server-stored, single-use refresh tokens delivered as an `HttpOnly` cookie. Key points:
+
+- Server behavior:
+
+  - On successful login the server issues an access JWT (returned in the JSON response) and creates a refresh token record in the database; the refresh token value is set in an `HttpOnly` cookie scoped to `/api/auth`.
+  - When the client calls `/api/auth/refresh`, the server reads the cookie, validates and revokes the old refresh token, issues a new access token and a new refresh token cookie (single-use rotation).
+  - On logout the server revokes the refresh token and clears the cookie.
+
+- Client adjustments:
+
+  - The client must call authentication endpoints with credentials so cookies are included: axios is configured with `withCredentials: true`.
+  - The client stores only the access token (in memory / localStorage) and no longer persists refresh tokens in localStorage.
+  - To refresh the access token the client calls `/api/auth/refresh` (no body) and receives a new access token in the JSON response; the refresh cookie is rotated by the server.
+
+- Why this is safer:
+
+  - `HttpOnly` cookies are inaccessible to JavaScript, reducing risk of token theft via XSS.
+  - Server-side token rotation and revocation reduce replay risk if a refresh token is leaked.
+
+- Quick manual test (example using `curl`):
+
+  1. Login and save cookies:
+
+```bash
+curl -c cookies.txt -H "Content-Type: application/json" -d '{"email":"admin@example.com","password":"password"}' http://localhost:3000/api/auth/login
+```
+
+2. Refresh using saved cookies:
+
+```bash
+curl -b cookies.txt -c cookies.txt -H "Content-Type: application/json" -X POST http://localhost:3000/api/auth/refresh
+```
+
+3. Logout (clears cookie server-side):
+
+```bash
+curl -b cookies.txt -c cookies.txt -H "Content-Type: application/json" -X POST http://localhost:3000/api/auth/logout
+```
+
+- Production notes:
+  - Serve over HTTPS so the cookie `secure` flag is enforced.
+  - Choose strict `SameSite` and cookie path settings appropriate for your deployment.
+  - Consider binding refresh tokens to client metadata and detecting reuse for additional protection.
+
 ### 5) Conclusion & Recommendations
 
 - Summary: this prototype implements authentication, RBAC, password hashing, audit logging, and basic hardening middleware — sufficient to demonstrate secure design choices in a live demo.

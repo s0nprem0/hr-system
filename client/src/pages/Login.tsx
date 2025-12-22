@@ -31,7 +31,7 @@ const Login = () => {
 				const payload = r.data
 				if (payload) {
 					safeSetItem('token', payload.token)
-					safeSetItem('refreshToken', payload.refreshToken)
+					// refresh token is stored in an httpOnly cookie by the server; do not persist it in storage
 					auth?.login(payload.user, payload.token)
 				}
 				// Redirect to the originally requested path, or fallback to dashboard

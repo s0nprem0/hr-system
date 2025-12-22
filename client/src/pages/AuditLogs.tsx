@@ -115,30 +115,6 @@ const AuditLogs = () => {
 						? `${r.user.name ?? '—'} (${r.user.email ?? '—'})`
 						: '—',
 			},
-			{ key: 'message', header: 'Message', render: (r) => r.message ?? '—' },
-			{
-				key: 'createdAt',
-				header: 'When',
-				render: (r) => new Date(r.createdAt).toLocaleString(),
-			},
-			{
-				key: 'before',
-				header: 'Before',
-				render: (r) =>
-					r.before
-						? JSON.stringify(r.before).slice(0, 80) +
-						  (JSON.stringify(r.before).length > 80 ? '…' : '')
-						: '—',
-			},
-			{
-				key: 'after',
-				header: 'After',
-				render: (r) =>
-					r.after
-						? JSON.stringify(r.after).slice(0, 80) +
-						  (JSON.stringify(r.after).length > 80 ? '…' : '')
-						: '—',
-			},
 		],
 		[]
 	)
