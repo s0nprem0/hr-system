@@ -1,52 +1,28 @@
-import React from 'react'
-import cn from '../../utils/cn'
-import { cva, type VariantProps } from 'class-variance-authority'
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { Check } from "lucide-react"
 
-export interface CheckboxProps
-	extends React.InputHTMLAttributes<HTMLInputElement>,
-		VariantProps<typeof checkboxInput> {
-	label?: React.ReactNode
-}
+import { cn } from "@/lib/utils"
 
-const wrapper = cva('inline-flex items-center gap-2')
-const checkboxInput = cva(
-	'h-4 w-4 rounded border-[var(--cp-border)] bg-(--cp-surface) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta)',
-	{
-		variants: {
-			variant: {
-				default: 'text-(--cp-primary-foreground)',
-				cta: 'text-(--cp-cta-foreground)',
-			},
-		},
-		defaultVariants: { variant: 'default' },
-	}
-)
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={cn(
+      "grid place-content-center peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator
+      className={cn("grid place-content-center text-current")}
+    >
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+))
+Checkbox.displayName = CheckboxPrimitive.Root.displayName
 
-export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-	({ label, className, variant, id, ...rest }, ref) => {
-		// use React's stable id generation to avoid impure calls during render
-		const stableId = React.useId()
-		const normalized = String(stableId).replace(/[^a-zA-Z0-9_-]/g, '')
-		const inputId = id ?? `chk-${normalized}`
-		return (
-			<div className={cn(wrapper(), className)}>
-				<input
-					id={inputId}
-					ref={ref}
-					type="checkbox"
-					className={cn(checkboxInput({ variant }))}
-					{...rest}
-				/>
-				{label && (
-					<label htmlFor={inputId} className="text-sm text-(--cp-text)">
-						{label}
-					</label>
-				)}
-			</div>
-		)
-	}
-)
-
-Checkbox.displayName = 'Checkbox'
-
-export default Checkbox
+export { Checkbox }

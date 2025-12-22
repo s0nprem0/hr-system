@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import api from '../../utils/api'
+import { Button } from '.'
 
 interface MaskedValueProps {
 	value: string | number | null | undefined
@@ -37,7 +38,8 @@ export default function MaskedValue({
 	return (
 		<span className={`inline-flex items-center gap-2 ${className}`}>
 			<span className="font-mono">{show ? display : mask}</span>
-			<button
+			<Button
+				variant="ghost"
 				type="button"
 				aria-label={show ? 'Hide value' : 'Show value'}
 				onClick={async () => {
@@ -59,7 +61,7 @@ export default function MaskedValue({
 				className="text-xs muted hover:underline"
 			>
 				{show ? 'Hide' : 'Show'}
-			</button>
+			</Button>
 		</span>
 	)
 }
