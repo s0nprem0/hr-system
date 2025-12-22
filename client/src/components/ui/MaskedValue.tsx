@@ -40,6 +40,7 @@ export default function MaskedValue({
 			<span className="font-mono">{show ? display : mask}</span>
 			<Button
 				variant="ghost"
+				size="sm"
 				type="button"
 				aria-label={show ? 'Hide value' : 'Show value'}
 				onClick={async () => {
