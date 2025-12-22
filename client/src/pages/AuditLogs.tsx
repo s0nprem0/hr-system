@@ -8,6 +8,7 @@ import type { JSONValue } from '../types/json'
 import { PageHeader } from '../components/PageHeader'
 import { LoadingErrorWrapper } from '../components/LoadingErrorWrapper'
 import { Input, Select, Button, Dialog } from '../components/ui'
+import DiffViewer from '../components/DiffViewer'
 import { Pagination } from '../components/Pagination'
 
 interface AuditLogRow {
@@ -27,7 +28,7 @@ const AuditLogs = () => {
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [page, setPage] = useState(1)
-	const [pageSize] = useState(6)
+	const [pageSize, setPageSize] = useState(10)
 	const [total, setTotal] = useState(0)
 
 	const [search, setSearch] = useState('')
@@ -166,7 +167,7 @@ const AuditLogs = () => {
 						placeholder: 'Filter by collection or text',
 					}}
 				>
-					<div className="flex items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2">
 						<Select
 							value={filterAction}
 							onChange={(e) => setFilterAction(e.target.value)}
@@ -196,6 +197,47 @@ const AuditLogs = () => {
 							onChange={(e) => setDateTo(e.target.value || null)}
 							className="w-36"
 						/>
+						<div className="flex gap-1">
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={() => {
+									const to = new Date()
+									const from = new Date()
+									from.setDate(from.getDate() - 1)
+									setDateFrom(from.toISOString().slice(0, 10))
+									setDateTo(to.toISOString().slice(0, 10))
+								}}
+							>
+								24h
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={() => {
+									const to = new Date()
+									const from = new Date()
+									from.setDate(from.getDate() - 7)
+									setDateFrom(from.toISOString().slice(0, 10))
+									setDateTo(to.toISOString().slice(0, 10))
+								}}
+							>
+								7d
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={() => {
+									const to = new Date()
+									const from = new Date()
+									from.setDate(from.getDate() - 30)
+									setDateFrom(from.toISOString().slice(0, 10))
+									setDateTo(to.toISOString().slice(0, 10))
+								}}
+							>
+								30d
+							</Button>
+						</div>
 						<Button
 							onClick={() => {
 								setPage(1)
@@ -204,6 +246,63 @@ const AuditLogs = () => {
 						>
 							Apply
 						</Button>
+						<Button
+							variant="ghost"
+							onClick={async () => {
+								// export current filters as JSON
+								try {
+									setLoading(true)
+									const params: Record<string, string | number | undefined> = {
+										page: 1,
+										limit: 1000,
+									}
+									const collectionName = filterCollection || search
+									if (collectionName) params.collectionName = collectionName
+									if (filterAction) params.action = filterAction
+									if (filterUser) params.user = filterUser
+									if (dateFrom) params.from = dateFrom
+									if (dateTo) params.to = dateTo
+									const res = await api.get('/api/audits', { params })
+									const r = res.data as ApiResponse<{
+										items: AuditLogDTO[]
+										total: number
+									}>
+									if (r?.success) {
+										const payload = JSON.stringify(r.data?.items || [], null, 2)
+										const blob = new Blob([payload], {
+											type: 'application/json',
+										})
+										const url = URL.createObjectURL(blob)
+										const a = document.createElement('a')
+										a.href = url
+										a.download = `audit-logs-${Date.now()}.json`
+										a.click()
+										URL.revokeObjectURL(url)
+									}
+								} catch {
+									// ignore
+								} finally {
+									setLoading(false)
+								}
+							}}
+						>
+							Export
+						</Button>
+						<div className="flex items-center gap-2">
+							<label className="text-sm muted">Page size</label>
+							<select
+								value={pageSize}
+								onChange={(e) => {
+									setPageSize(Number(e.target.value))
+									setPage(1)
+								}}
+								className="rounded border px-2 py-1"
+							>
+								<option value={10}>10</option>
+								<option value={25}>25</option>
+								<option value={50}>50</option>
+							</select>
+						</div>
 						<Button
 							variant="ghost"
 							onClick={() => {
@@ -223,6 +322,14 @@ const AuditLogs = () => {
 				</PageHeader>
 
 				<LoadingErrorWrapper loading={loading} error={error}>
+					<div className="mb-2 text-sm muted">
+						{total > 0
+							? `Showing ${Math.min(
+									(page - 1) * pageSize + 1,
+									total
+							  )}–${Math.min(page * pageSize, total)} of ${total}`
+							: 'No results'}
+					</div>
 					<DataTable
 						data={items}
 						columns={columns}
@@ -248,7 +355,7 @@ const AuditLogs = () => {
 					}
 				>
 					{selected ? (
-						<div className="space-y-4">
+						<div className="space-y-4 max-h-[70vh] overflow-auto">
 							<div className="muted text-sm">ID: {selected._id}</div>
 							<div className="text-sm">
 								<strong>User:</strong>{' '}
@@ -268,20 +375,13 @@ const AuditLogs = () => {
 								{new Date(selected.createdAt).toLocaleString()}
 							</div>
 							<div>
-								<h4 className="font-semibold">Before</h4>
-								<pre className="max-h-64 overflow-auto bg-[color-mix(in srgb, var(--cp-surface) 96%, var(--cp-bg) 4%)] border-(--cp-border) rounded p-2 text-sm">
-									{selected.before
-										? JSON.stringify(selected.before, null, 2)
-										: '—'}
-								</pre>
-							</div>
-							<div>
-								<h4 className="font-semibold">After</h4>
-								<pre className="max-h-64 overflow-auto bg-[color-mix(in srgb, var(--cp-surface) 96%, var(--cp-bg) 4%)] border-(--cp-border) rounded p-2 text-sm">
-									{selected.after
-										? JSON.stringify(selected.after, null, 2)
-										: '—'}
-								</pre>
+								<h4 className="font-semibold">Structured diff</h4>
+								<DiffViewer
+									before={selected.before as unknown as Record<string, unknown>}
+									after={selected.after as unknown as Record<string, unknown>}
+									collectionName={selected.collectionName}
+									documentId={selected.documentId}
+								/>
 							</div>
 						</div>
 					) : null}
