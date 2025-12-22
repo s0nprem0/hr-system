@@ -35,7 +35,11 @@ jobs:
       - name: Install server deps (npm)
         working-directory: server
         run: |
-          npm ci --prefer-offline --no-audit --progress=false
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          else
+            npm install --prefer-offline --no-audit --progress=false
+          fi
       - name: Lint (server)
         working-directory: server
         run: npm run lint --if-present
@@ -68,10 +72,20 @@ jobs:
         run: bun install
       - name: Lint (client)
         working-directory: client
-        run: bun run lint --if-present
+        run: |
+          if grep -q '"lint"' package.json; then
+            bun run lint
+          else
+            echo "no lint script found in package.json; skipping lint"
+          fi
       - name: Typecheck (client)
         working-directory: client
-        run: bun run typecheck --if-present
+        run: |
+          if grep -q '"typecheck"' package.json; then
+            bun run typecheck
+          else
+            echo "no typecheck script found in package.json; skipping typecheck"
+          fi
       - name: Run Bun tests (client)
         working-directory: client
         run: bun test
