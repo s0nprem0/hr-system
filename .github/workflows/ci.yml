@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: "ci-${{ github.ref }}"
+  group: 'ci-${{ github.ref }}'
   cancel-in-progress: true
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: "Debug: Node & npm"
+      - name: 'Debug: Node & npm'
         run: |
           node --version
           npm --version
@@ -55,35 +55,48 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.3.5'
-      - name: Debug: Bun version
-        run: bun --version
       - name: Cache client deps (bun)
         uses: actions/cache@v4
         with:
           path: |
             ~/.bun
-            client/node_modules
           key: ${{ runner.os }}-bun-${{ hashFiles('client/package.json') }}
           restore-keys: |
             ${{ runner.os }}-bun-
       - name: Install client deps (bun)
         working-directory: client
-        run: |
-          bun install
-          if [ -f package-lock.json ]; then npm ci; fi
+        run: bun install
       - name: Lint (client)
         working-directory: client
         run: bun run lint --if-present
       - name: Typecheck (client)
         working-directory: client
         run: bun run typecheck --if-present
-      - name: Run client tests (Bun + Node/Vitest)
+      - name: Run Bun tests (client)
+        working-directory: client
+        run: bun test
+      - name: Setup Node.js (for Vitest)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Cache client node deps (npm)
+        uses: actions/cache@v4
+        with:
+          path: client/node_modules
+          key: ${{ runner.os }}-node-client-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-client-
+      - name: Install client deps (npm for Vitest)
         working-directory: client
         run: |
-          # Run Bun's test runner first (uses client/tests/setup-bun.ts which re-exports shared setup)
-          bun test
-          # Also run Vitest under Node to ensure parity; install node deps then run vitest
-          if command -v npm >/dev/null 2>&1; then
-            npm install
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          fi
+      - name: Run Vitest (Node)
+        working-directory: client
+        run: |
+          if [ -f package-lock.json ]; then
             npm test
+          else
+            echo "no package-lock.json found; skipping npm Vitest run"
           fi
