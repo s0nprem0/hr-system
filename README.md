@@ -1,223 +1,231 @@
+# 🧑‍💼 HR Management System
+
+A simple **full-stack HR management demo** built with a modern React frontend and a secure Express API.
+Designed to be **easy to run locally**, easy to read, and easy to extend.
+
+> ⚡ Clean structure, solid security, zero unnecessary setup drama.
+
+---
+
+## 📂 Project Structure
+
+```
+root/
+├── client/                      # React + Vite frontend
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.*
+│   ├── public/
+│   └── src/
+│       ├── main.tsx
+│       ├── App.tsx
+│       ├── index.css
+│       ├── assets/
+│       ├── components/           # shared UI (DataTable, Navbar, layout/)
+│       ├── pages/                # route views (Employees, Payroll, Users)
+│       ├── context/              # AuthContext, ToastContext, etc.
+│       ├── utils/                # api.ts, cn.ts, hooks, validators
+│       └── tests/                # Vitest tests
+|
+└── server/                      # Express + TypeScript backend
+  ├── package.json
+  ├── tsconfig.json
+  ├── index.ts                 # entry (starts the server)
+  ├── app.ts                   # express app setup and middleware
+  ├── controllers/             # auth, employees, departments, payroll
+  ├── routes/                  # route registration
+  ├── models/                  # Mongoose schemas (User, AuditLog, Department)
+  ├── middleware/              # auth, requirePermission, validation handlers
+  ├── utils/                   # apiResponse, auditLogger, permissions
+  ├── scripts/                 # userSeed.ts
+  └── tests/                   # Jest tests
+```
+
+> Repo contains `client/` and `server/` only frontend and backend are separated for clarity.
+
+---
+
 ## 🛡️ Security Features
 
-This application implements industry-standard security practices to ensure data integrity and access control:
+This application follows **industry-standard security practices** to protect data and enforce access control:
 
-- **Role-Based Access Control (RBAC):** Strict segregation of duties between Admin, HR, Employee, and Manager roles. Routes and API endpoints are protected using middleware that verifies user permissions before granting access.
-- **JWT Authentication:** Stateless authentication using JSON Web Tokens (JWT). Tokens are signed securely on the server and verified on every protected request.
-- **Password Encryption:** User passwords are never stored in plain text. We use **Bcrypt** to hash and salt passwords before storage, protecting against rainbow table attacks.
-- **Data Masking:** Sensitive information (such as salaries and personal identifiers) is visually masked by default on the frontend, requiring explicit user action ("eye toggle") to view, preventing shoulder-surfing leaks.
-- **Audit Logging:** Critical actions, specifically changes to sensitive financial data (Salary), are recorded in an immutable audit log. This tracks _who_ made the change, _when_, and the _previous vs. new values_.
+- **Role-Based Access Control (RBAC)**
+  Strict separation between **Admin, HR, Manager, and Employee** roles.
+  Backend middleware validates permissions on routes and API endpoints.
 
-## 🛠️ Technical Stack
+- **JWT Authentication**
+  Stateless authentication using signed JSON Web Tokens (JWT).
+  Tokens are verified on every protected request.
 
-**Frontend:**
+- **Password Encryption**
+  Passwords are hashed and salted using **bcrypt**.
+  Plain-text passwords are never stored.
 
-- **Framework:** React 19 (via Vite) for a fast, responsive user interface.
-- **Language:** TypeScript for type safety and maintainable code.
-- **Styling:** Tailwind CSS v4 for utility-first, responsive design.
-- **State Management:** React Context API for handling Authentication state globally.
-- **Routing:** React Router v7 for managing protected routes and navigation.
+- **Data Masking (Frontend)**
+  Sensitive fields (e.g. salary, personal identifiers) are masked by default and only revealed via an explicit 👁️ toggle to prevent shoulder-surfing.
 
-**Backend:**
+- **Audit Logging**
+  All salary changes are written to an immutable audit log, tracking:
 
-- **Runtime:** Bun (v1.3.4) for high-performance JavaScript execution.
-- **Framework:** Express.js for RESTful API routing and middleware management.
-- **Database:** MongoDB (via Mongoose) for flexible, schema-based data modeling.
-- **Authentication:** `jsonwebtoken` for auth flow and `bcryptjs` for security.
-
-## 🚀 Getting Started
-
-Follow these steps to run the project locally (server + client).
-
-Prerequisites:
-
-- Node-compatible runtime (Bun or Node.js) and package manager of your choice.
-- MongoDB running locally or a connection string to a hosted database.
-
-1. Copy the example environment file and fill values:
-
-```
-cp .env.example .env
-# then edit `.env` and set JWT_KEY and MONGO_URI at minimum
-```
-
-2. Install dependencies and run both parts:
-
-PowerShell (recommended for Windows users):
-
-````pwsh
-# Server
-cd server
-bun install # or `npm install`
-## HR System — README
-
-This repository contains a sample HR management system with a React + Vite frontend in `client/` and an Express-based API in `server/`. The project demonstrates role-based access, JWT auth, audit logging, and standard developer tooling.
+  - Who made the change
+  - When it happened
+  - Previous vs. new values
 
 ---
 
-## Quick Start (Windows)
+## 🛠️ Tech Stack
 
-Prerequisites:
-- Install Bun (recommended) or Node.js (16+).
-- MongoDB running locally or accessible via `MONGO_URI`.
+### Frontend (`client/`)
 
-1) Copy environment files and set secrets:
+- **Framework:** React 19 (Vite)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4
+- **State Management:** React Context API (auth state)
+- **Routing:** React Router v7
+- **Testing:** Vitest
+
+### Backend (`server/`)
+
+- **Runtime:** Bun v1.3.4 (Node-compatible)
+- **Framework:** Express.js + TypeScript
+- **Database:** MongoDB (Mongoose)
+- **Authentication:** jsonwebtoken
+- **Security:** bcryptjs
+- **Testing:** Jest
+
+---
+
+## 🚀 Getting Started (Local Development)
+
+### Prerequisites
+
+- **Bun** (recommended) or **Node.js 16+**
+- **MongoDB** (local or hosted)
+
+---
+
+### 1️⃣ Environment Setup
+
+Copy the example environment file:
 
 ```pwsh
-copy .env.example .env
-# Edit `.env` and set at minimum: JWT_KEY, MONGO_URI
-````
+copy server\.env.example server\.env
+```
 
-2. Install dependencies:
+Minimum required values:
+
+```env
+JWT_KEY=your_secret_key
+MONGO_URI=mongodb://localhost:27017/hr-system
+```
+
+---
+
+### 2️⃣ Install Dependencies
 
 ```pwsh
-# Server
 cd server
-bun install # or npm install
+bun install
 
-# Client
 cd ../client
-bun install # or npm install
+bun install
 ```
 
-3. Run dev servers (two terminals):
+> Replace `bun install` with `npm install` if using npm.
+
+---
+
+### 3️⃣ Run Development Servers
+
+Open **two terminals**:
 
 ```pwsh
-# Terminal 1: server
+# Terminal 1 – Backend
 cd server
-bun run dev # or npm run dev
-
-# Terminal 2: client
-cd client
-bun run dev # or npm run dev
+bun run dev
 ```
-
-The client defaults to `http://localhost:5173` and the server to `http://localhost:3000` (see server config).
-
----
-
-## Installation Notes (alternative / Unix)
-
-Use the same steps above but replace `pwsh` commands with POSIX equivalents:
-
-```bash
-cp .env.example .env
-cd server && bun install
-cd ../client && bun install
-```
-
-If you prefer `npm`/`pnpm`/`yarn`, replace `bun install` with your package manager of choice.
-
----
-
-## Cleanup & Reset
-
-- Remove dependencies and caches (Windows PowerShell):
 
 ```pwsh
-# From project root
-Remove-Item -Recurse -Force server\node_modules, client\node_modules
+# Terminal 2 – Frontend
+cd client
+bun run dev
+```
+
+Frontend will be available at:
+
+```
+http://localhost:5173
+```
+
+---
+
+## 🌱 Database Seeding
+
+Populate the database with development users:
+
+```pwsh
+cd server
+bun run seed
+```
+
+⚠️ **Warning**
+Resetting the database requires dropping the MongoDB database and re-running the seed script.
+This will permanently delete all data.
+
+---
+
+## 🧹 Cleanup
+
+Remove dependencies and caches (PowerShell):
+
+```pwsh
+Remove-Item -Recurse -Force server\node_modules
+Remove-Item -Recurse -Force client\node_modules
 bun cache clear
 ```
 
-- Reinstall:
+Remove build artifacts:
 
 ```pwsh
-cd server; bun install
-cd ../client; bun install
-```
-
-- Reset database (drop and reseed) — use with caution:
-
-```pwsh
-cd server
-# Depending on your scripts, this may drop and recreate dev data
-bun run seed # or npm run seed
-```
-
-- Remove build artifacts:
-
-```pwsh
-Remove-Item -Recurse -Force client\dist, server\dist
+Remove-Item -Recurse -Force client\dist
+Remove-Item -Recurse -Force server\dist
 ```
 
 ---
 
-## Testing, Linting & Formatting
+## 🧪 Tests
 
-- Client tests (Vitest) and setup live in `client/tests`:
+Run tests separately for client and server.
 
 ```pwsh
 cd client
-bun run test # or npm run test
+bun run test
 ```
-
-- Server tests (Jest) live in `server/tests`:
 
 ```pwsh
 cd server
-bun run test # or npm run test
-```
-
-- Lint / format (if configured):
-
-```pwsh
-# Client
-cd client
-bun run lint
-bun run format
-
-# Server
-cd server
-bun run lint
-bun run format
+bun run test
 ```
 
 ---
 
-## Environment Variables
+## 🐛 Troubleshooting
 
-See `.env.example` for the full list. Key variables:
-
-- `JWT_KEY` — signing secret for JWTs (required)
-- `MONGO_URI` — MongoDB connection string (defaults to `mongodb://127.0.0.1:27017/hr-system`)
-- `CLIENT_URL` — frontend origin for CORS (defaults to `http://localhost:5173`)
-
-Seed account env vars (optional): `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `HR_EMAIL`, `HR_PASSWORD`, `EMP_EMAIL`, `EMP_PASSWORD`.
+- Ensure MongoDB is running and `MONGO_URI` is correct
+- Check for port conflicts if the server fails to start
+- Delete `node_modules` and reinstall if dependencies break
+- Use **PowerShell** on Windows, POSIX shell on macOS/Linux
 
 ---
 
-## Seeding Development Users
+## 🤝 Contributing
 
-```pwsh
-cd server
-bun run seed # or npm run seed
-```
+Issues and PRs are welcome.
 
-This populates example admin/hr/employee accounts. Modify env vars to change credentials.
+Before submitting:
 
----
-
-## Troubleshooting
-
-- If you see connection errors, confirm `MONGO_URI` and that MongoDB is running.
-- On Windows, prefer PowerShell for the provided commands. If using WSL, adapt commands accordingly.
-- If ports conflict, update `CLIENT_URL` or server port in environment/config.
-- If using Node instead of Bun, ensure package scripts and dev tooling are compatible (some commands may require small adjustments).
-
-Common fixes:
-
-- Delete `node_modules` and reinstall.
-- Clear Bun cache: `bun cache clear`.
-- Ensure `.env` is present and not ignored by mistake.
-
----
-
-## Technical Notes
-
-- Frontend: React + Vite, TypeScript, Tailwind CSS. Source in `client/src`.
-- Backend: Express + TypeScript. Source in `server/` with routes in `server/routes` and controllers in `server/controllers`.
-- Auth: JWT-based with refresh token handling and permission middleware in `server/middleware`.
-- Audit logging: Critical changes are stored in `server/models/AuditLog.ts`.
+- Run tests
+- Fix lint issues
+- Keep commits clean and focused
 
 ---
