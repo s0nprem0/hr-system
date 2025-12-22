@@ -15,7 +15,10 @@ interface Employee {
 	name: string
 	email?: string
 	role?: string
-	profile?: { department?: { _id?: string; name?: string } } | null
+	profile?: {
+		department?: { _id?: string; name?: string }
+		salary?: number | string
+	} | null
 	createdAt?: string
 }
 
@@ -58,6 +61,8 @@ const EmployeeDetail = () => {
 
 	const toast = useToast()
 	const confirm = useConfirm()
+
+	const salary = employee?.profile?.salary
 
 	const handleDelete = async () => {
 		if (!id) return
@@ -103,16 +108,15 @@ const EmployeeDetail = () => {
 							<strong>Department:</strong>{' '}
 							{employee.profile?.department?.name ?? '-'}
 						</div>
-						{employee.profile &&
-							(employee.profile as any).salary !== undefined && (
-								<div>
-									<strong>Salary:</strong>{' '}
-									<MaskedValue
-										value={(employee.profile as any).salary}
-										formatter={(v) => Number(v).toFixed(2)}
-									/>
-								</div>
-							)}
+						{salary !== undefined && (
+							<div>
+								<strong>Salary:</strong>{' '}
+								<MaskedValue
+									value={salary}
+									formatter={(v) => Number(v).toFixed(2)}
+								/>
+							</div>
+						)}
 						<div>
 							<strong>Created:</strong>{' '}
 							{employee.createdAt
