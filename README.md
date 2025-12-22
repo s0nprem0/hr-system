@@ -224,8 +224,91 @@ Issues and PRs are welcome.
 
 Before submitting:
 
-- Run tests
-- Fix lint issues
-- Keep commits clean and focused
+## 🔐 Secure Prototype Guide
+
+This project can be used as a secure-system prototype for a short evaluation or class assignment. The sections below map to the deliverables: a functional prototype, project documentation, and a presentation/demo checklist.
+
+### 1) Introduction
+
+- Purpose: demonstrate a compact HR system implementing core security controls (authentication, authorization, logging) suitable for a live demo.
+- Scope: local development only — example users, seed data, and UI flows for employee/payroll management; not a production-ready deployment.
+- Objectives: show authentication & authorization, protect sensitive data, and illustrate defenses against common web attacks.
+
+### 2) System Overview
+
+- Components:
+  - Frontend: `client/` (React + Vite) — UI, data masking, calls backend APIs.
+  - Backend: `server/` (Express + TypeScript) — REST API, auth, business logic, audit logging.
+  - Database: MongoDB (Mongoose) for storage of users, departments, payroll, and audit logs.
+- Key flows to highlight in the demo: user login, role-based access to protected pages, updating sensitive fields (salary) and viewing the resulting audit log.
+
+### 3) Security Features (implemented)
+
+Below are the main security measures already implemented and how to demonstrate them:
+
+- Authentication & Authorization
+
+  - JWT-based authentication for API requests.
+  - Role-Based Access Control (RBAC) enforced via middleware (`server/middleware`), restricting routes to Admin/HR/Manager/Employee as appropriate.
+  - Demo: log in as different seeded users (see `server/userSeed.ts`) and show permitted vs. blocked actions.
+
+- Password Security
+
+  - Passwords are hashed with `bcryptjs` before storage; plain text passwords are never stored or returned.
+  - Demo: show the `User` model and seed process; explain hashing step.
+
+- Transport & Common-hardening (configured/recommended)
+
+  - Server uses security middleware such as `helmet` and `express-rate-limit` to reduce common attack surface and brute-force attempts.
+  - Input validation uses `express-validator` to reduce injection risks.
+  - Demo: show middleware registration in `server/app.ts` and a sample validation chain.
+
+- Audit Logging
+  - Salary changes and other sensitive updates are written to `AuditLog` entries (immutable audit records) to provide accountability.
+  - Demo: perform a salary edit and open the audit log view or query the `auditlogs` collection.
+
+Notes on measures not fully implemented in this prototype (recommended for production): TLS termination (HTTPS), DB encryption-at-rest configuration, and secret rotation policies.
+
+### 4) Technical Details
+
+- Languages & tools: TypeScript, React, Vite, Express, Bun/Node, MongoDB, Mongoose, Jest, Vitest.
+- Key packages: `bcryptjs`, `jsonwebtoken`, `helmet`, `express-rate-limit`, `express-validator`, `pino` (logging).
+- Test approach: unit tests for controllers and utilities (Jest), component tests (Vitest). Use in-memory MongoDB for fast backend tests (`mongodb-memory-server`).
+
+Development notes:
+
+- Use `bun` (or `npm`) to install and run scripts defined in `client/package.json` and `server/package.json`.
+- Seed dev users with `bun run seed` from `server/` to get accounts for the demo.
+
+### 5) Conclusion & Recommendations
+
+- Summary: this prototype implements authentication, RBAC, password hashing, audit logging, and basic hardening middleware — sufficient to demonstrate secure design choices in a live demo.
+- Production recommendations:
+  - Enforce HTTPS (TLS) through reverse proxy / hosting platform.
+  - Enable MongoDB encryption at rest and network-level access controls.
+  - Rotate secrets and adopt short-lived tokens where possible (refresh-token rotation).
+  - Harden CSP, CORS, and add additional security headers.
+  - Add monitoring/alerting (suspicious logins, rate-limit hits) and centralized secure logging.
+
+### 6) Presentation / Demo Checklist (face-to-face)
+
+- Preparation:
+
+  - Ensure MongoDB is running and `server/.env` has correct values.
+  - Run `bun install` in both `server/` and `client/` (or `npm install`).
+  - Seed users: `cd server && bun run seed`.
+
+- Live demo steps:
+
+  1. Start backend: `cd server && bun run dev`.
+  2. Start frontend: `cd client && bun run dev`.
+  3. Open the frontend (`http://localhost:5173`) and log in as an Admin and as a non-Admin user to show role differences.
+  4. Edit a salary (or other sensitive field) and show the audit log entry created.
+  5. Attempt an unauthorized action (e.g., a non-Admin editing payroll) to show access control.
+  6. Show middleware and security package usage in `server/app.ts` and `server/middleware`.
+
+- Q&A tips:
+  - Be ready to explain why JWTs were chosen, how RBAC is enforced, and where improvements are needed for production.
+  - Discuss trade-offs (stateless tokens vs. server-side sessions, seed data convenience vs. production security).
 
 ---
