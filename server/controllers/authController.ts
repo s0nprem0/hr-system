@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { validationResult } from 'express-validator'
+// express-validator handled via middleware; no local import needed
 import User from '../models/User'
 import bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
@@ -54,15 +54,73 @@ const login = async (req: Request, res: Response) => {
 		})
 
 		// create a refresh token and persist it, then set it in an httpOnly cookie
+		logger.debug(
+			{ user: user._id },
+			'authController.login: creating refresh token'
+		)
 		const refreshTokenValue = crypto.randomBytes(48).toString('hex')
+		const refreshTokenHash = crypto
+			.createHash('sha256')
+			.update(refreshTokenValue)
+			.digest('hex')
 		const refreshTtlSeconds = Number(
 			process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7
 		) // default 7 days
+
+		// Defensive: drop any legacy unique index on `token` which would cause
+		// duplicate-null errors (older schema stored `token` raw). Also ensure
+		// the `tokenHash` unique index exists. These operate on the collection
+		// directly and are best-effort; failures are non-fatal.
+		try {
+			if (
+				RefreshToken.collection &&
+				typeof RefreshToken.collection.indexes === 'function'
+			) {
+				const indexes = await RefreshToken.collection.indexes()
+				logger.debug({ indexes }, 'authController.login: refreshToken indexes')
+				for (const idx of indexes) {
+					if (idx.key && (idx.key as any).token === 1) {
+						logger.warn(
+							{ index: idx.name },
+							'authController.login: dropping legacy index'
+						)
+						await RefreshToken.collection.dropIndex(idx.name)
+					}
+				}
+			}
+		} catch (e) {
+			logger.warn(
+				{ err: e },
+				'authController.login: error cleaning indexes (ignored)'
+			)
+		}
+
+		try {
+			if (
+				RefreshToken.collection &&
+				typeof RefreshToken.collection.createIndex === 'function'
+			) {
+				await RefreshToken.collection.createIndex(
+					{ tokenHash: 1 },
+					{ unique: true }
+				)
+			}
+		} catch (e) {
+			logger.warn(
+				{ err: e },
+				'authController.login: ensure tokenHash index error (ignored)'
+			)
+		}
+
 		const refresh = await RefreshToken.create({
-			token: refreshTokenValue,
+			tokenHash: refreshTokenHash,
 			user: user._id,
 			expiresAt: new Date(Date.now() + refreshTtlSeconds * 1000),
 		})
+		logger.debug(
+			{ id: refresh._id, tokenHash: refresh.tokenHash },
+			'authController.login: refresh token created'
+		)
 
 		// set refresh token as httpOnly cookie (path scoped to auth routes)
 		const cookieOptions = {
@@ -72,7 +130,8 @@ const login = async (req: Request, res: Response) => {
 			path: '/api/auth',
 			maxAge: refreshTtlSeconds * 1000,
 		}
-		res.cookie('refreshToken', refresh.token, cookieOptions)
+		// send raw token to client in httpOnly cookie; only the hash is stored server-side
+		res.cookie('refreshToken', refreshTokenValue, cookieOptions)
 
 		return sendSuccess(
 			res,
@@ -81,7 +140,7 @@ const login = async (req: Request, res: Response) => {
 		)
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : String(error)
-		logger.error({ err: error }, 'Login error')
+		logger.error({ err: error }, 'authController.login error')
 		return sendError(res, message, 500, error)
 	}
 }
@@ -127,9 +186,13 @@ const refresh = async (req: Request, res: Response) => {
 		if (!incomingRefresh) return sendError(res, 'Refresh token required', 400)
 		// Atomically find the refresh token which is not revoked and not expired, and mark it revoked in one operation.
 		const now = new Date()
+		const incomingHash = crypto
+			.createHash('sha256')
+			.update(incomingRefresh)
+			.digest('hex')
 		const found = await RefreshToken.findOneAndUpdate(
 			{
-				token: incomingRefresh,
+				tokenHash: incomingHash,
 				revoked: { $ne: true },
 				expiresAt: { $gt: now },
 			},
@@ -137,7 +200,44 @@ const refresh = async (req: Request, res: Response) => {
 			{ new: true }
 		)
 
-		if (!found) return sendError(res, 'Refresh token invalid or expired', 401)
+		// If we didn't find a valid token to rotate, check if the token exists and was already revoked
+		if (!found) {
+			const existing = await RefreshToken.findOne({ tokenHash: incomingHash })
+			if (!existing)
+				return sendError(res, 'Refresh token invalid or expired', 401)
+
+			// Token exists but is already revoked -> possible reuse attack
+			if (existing.revoked) {
+				// Revoke all tokens for this user as a defensive measure
+				try {
+					await RefreshToken.updateMany(
+						{ user: existing.user, revoked: { $ne: true } },
+						{ $set: { revoked: true } }
+					)
+				} catch (e) {
+					// log and continue to clear cookie
+					logger.warn(
+						{ err: e, user: existing.user },
+						'Failed to revoke all refresh tokens during reuse handling'
+					)
+				}
+
+				// Clear cookie and log the incident
+				res.clearCookie('refreshToken', { path: '/api/auth' })
+				logger.warn(
+					{ user: existing.user, tokenHash: incomingHash },
+					'Refresh token reuse detected - revoked all tokens for user'
+				)
+				return sendError(res, 'Refresh token reuse detected', 401)
+			}
+
+			// Token exists but is expired
+			if (existing.expiresAt <= now)
+				return sendError(res, 'Refresh token invalid or expired', 401)
+
+			// Fallback: treat as invalid
+			return sendError(res, 'Refresh token invalid', 401)
+		}
 
 		const user = await User.findById(found.user)
 		if (!user) return sendError(res, 'User not found', 404)
@@ -155,8 +255,12 @@ const refresh = async (req: Request, res: Response) => {
 		const refreshTtlSeconds2 = Number(
 			process.env.REFRESH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 7
 		)
+		const newRefreshHash = crypto
+			.createHash('sha256')
+			.update(newRefreshValue)
+			.digest('hex')
 		const newRefresh = await RefreshToken.create({
-			token: newRefreshValue,
+			tokenHash: newRefreshHash,
 			user: user._id,
 			expiresAt: new Date(Date.now() + refreshTtlSeconds2 * 1000),
 			revoked: false,
@@ -169,12 +273,12 @@ const refresh = async (req: Request, res: Response) => {
 			path: '/api/auth',
 			maxAge: refreshTtlSeconds2 * 1000,
 		}
-		res.cookie('refreshToken', newRefresh.token, cookieOptions2)
+		res.cookie('refreshToken', newRefreshValue, cookieOptions2)
 
 		return sendSuccess(res, { token }, 200)
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err)
-		logger.error({ err }, 'refresh token error')
+		logger.error({ err }, 'authController.refresh error')
 		return sendError(res, message, 500, err)
 	}
 }
@@ -185,8 +289,12 @@ const logout = async (req: Request, res: Response) => {
 		const incomingRefresh = req.cookies?.refreshToken || req.body?.refreshToken
 		if (!incomingRefresh) return sendError(res, 'Refresh token required', 400)
 		// Atomically mark the provided refresh token revoked (idempotent)
+		const incomingHash = crypto
+			.createHash('sha256')
+			.update(incomingRefresh)
+			.digest('hex')
 		const result = await RefreshToken.findOneAndUpdate(
-			{ token: incomingRefresh, revoked: { $ne: true } },
+			{ tokenHash: incomingHash, revoked: { $ne: true } },
 			{ $set: { revoked: true } },
 			{ new: true }
 		)
@@ -195,7 +303,7 @@ const logout = async (req: Request, res: Response) => {
 		return sendSuccess(res, { revoked: !!result }, 200)
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err)
-		logger.error({ err }, 'logout error')
+		logger.error({ err }, 'authController.logout error')
 		return sendError(res, message, 500, err)
 	}
 }
