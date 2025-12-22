@@ -1,10 +1,15 @@
 import { useState } from 'react'
+import api from '../../utils/api'
 
 interface MaskedValueProps {
 	value: string | number | null | undefined
 	mask?: string
 	formatter?: (v: string | number) => string
 	className?: string
+	// optional audit wiring: when the value is revealed, POST to /api/audits/event
+	auditCollection?: string
+	auditDocumentId?: string | number | null
+	auditMessage?: string
 }
 
 export default function MaskedValue({
@@ -12,8 +17,12 @@ export default function MaskedValue({
 	mask = '••••',
 	formatter,
 	className = '',
+	auditCollection,
+	auditDocumentId,
+	auditMessage,
 }: MaskedValueProps) {
 	const [show, setShow] = useState(false)
+	const [sentAudit, setSentAudit] = useState(false)
 
 	if (value === null || value === undefined)
 		return <span className={className}>—</span>
@@ -31,7 +40,22 @@ export default function MaskedValue({
 			<button
 				type="button"
 				aria-label={show ? 'Hide value' : 'Show value'}
-				onClick={() => setShow(!show)}
+				onClick={async () => {
+					const next = !show
+					setShow(next)
+					if (next && !sentAudit && auditCollection) {
+						setSentAudit(true)
+						try {
+							await api.post('/api/audits/event', {
+								collectionName: auditCollection,
+								documentId: auditDocumentId ?? undefined,
+								message: auditMessage ?? `Viewed ${auditCollection} value`,
+							})
+						} catch {
+							// ignore errors for now — non-fatal
+						}
+					}
+				}}
 				className="text-xs muted hover:underline"
 			>
 				{show ? 'Hide' : 'Show'}
