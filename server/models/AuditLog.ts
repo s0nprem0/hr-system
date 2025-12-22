@@ -7,6 +7,7 @@ export interface IAuditLog extends Document {
 	user?: mongoose.Types.ObjectId
 	before?: unknown
 	after?: unknown
+	changes?: unknown[]
 	message?: string
 	createdAt: Date
 }
@@ -23,7 +24,14 @@ const auditSchema: Schema = new Schema({
 	before: { type: Schema.Types.Mixed },
 	after: { type: Schema.Types.Mixed },
 	message: { type: String },
+	changes: { type: Array },
 	createdAt: { type: Date, default: Date.now },
 })
+
+// Indexes for common queries to improve read performance
+auditSchema.index({ createdAt: -1 })
+auditSchema.index({ collectionName: 1, documentId: 1 })
+auditSchema.index({ collectionName: 1, createdAt: -1 })
+auditSchema.index({ user: 1 })
 
 export default mongoose.model<IAuditLog>('AuditLog', auditSchema)
