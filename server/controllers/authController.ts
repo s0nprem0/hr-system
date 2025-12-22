@@ -52,7 +52,7 @@ const login = async (req: Request, res: Response) => {
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
         logger.error({ err: error }, 'Login error');
-        return sendError(res, message, 500);
+        return sendError(res, message, 500, error);
     }
 };
 
@@ -75,7 +75,7 @@ const register = async (req: Request, res: Response) => {
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'Register error');
-        return sendError(res, message, 500);
+        return sendError(res, message, 500, err);
     }
 }
 
@@ -118,7 +118,7 @@ const refresh = async (req: Request, res: Response) => {
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'refresh token error');
-        return sendError(res, message, 500);
+        return sendError(res, message, 500, err);
     }
 };
 
@@ -136,7 +136,7 @@ const logout = async (req: Request, res: Response) => {
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         logger.error({ err }, 'logout error');
-        return sendError(res, message, 500);
+        return sendError(res, message, 500, err);
     }
 };
 

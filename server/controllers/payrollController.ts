@@ -62,7 +62,7 @@ const listPayroll = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'listPayroll error');
-    return sendError(res, message, 500);
+    return sendError(res, message, 500, err);
   }
 };
 
@@ -75,7 +75,7 @@ const getPayroll = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'getPayroll error');
-    return sendError(res, message, 500);
+    return sendError(res, message, 500, err);
   }
 };
 
@@ -121,7 +121,7 @@ const createPayroll = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'createPayroll error');
-    return sendError(res, message, 500);
+    return sendError(res, message, 500, err);
   }
 };
 
@@ -165,7 +165,7 @@ const updatePayroll = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'updatePayroll error');
-    return sendError(res, message, 500);
+    return sendError(res, message, 500, err);
   }
 };
 
@@ -188,7 +188,7 @@ const deletePayroll = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'deletePayroll error');
-    return sendError(res, message, 500);
+    return sendError(res, message, 500, err);
   }
 };
 

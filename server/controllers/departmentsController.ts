@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { FilterQuery } from 'mongoose';
+import type { FilterQuery } from 'mongoose/types';
 import Department, { IDepartment } from '../models/Department';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import logger from '../logger';
@@ -10,7 +10,7 @@ export const listDepartments = async (req: Request, res: Response) => {
     const limit = Math.min(Number(req.query.limit) || 25, 100);
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
 
-    const filter: FilterQuery<IDepartment> = {};
+    const filter: Record<string, unknown> = {};
     if (search) {
       filter.name = { $regex: search, $options: 'i' };
     }
@@ -26,7 +26,7 @@ export const listDepartments = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'List departments error');
-    return sendError(res, msg, 500);
+    return sendError(res, msg, 500, err);
   }
 };
 
@@ -39,7 +39,7 @@ export const getDepartment = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'Get department error');
-    return sendError(res, msg, 500);
+    return sendError(res, msg, 500, err);
   }
 };
 
@@ -54,7 +54,7 @@ export const createDepartment = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'Create department error');
-    return sendError(res, msg, 500);
+    return sendError(res, msg, 500, err);
   }
 };
 
@@ -68,7 +68,7 @@ export const updateDepartment = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'Update department error');
-    return sendError(res, msg, 500);
+    return sendError(res, msg, 500, err);
   }
 };
 
@@ -81,7 +81,7 @@ export const deleteDepartment = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error({ err }, 'Delete department error');
-    return sendError(res, msg, 500);
+    return sendError(res, msg, 500, err);
   }
 };
 
