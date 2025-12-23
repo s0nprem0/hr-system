@@ -10,7 +10,7 @@ import {
 import verifyUser from '../middleware/authMiddleware'
 import requirePermission from '../middleware/requirePermission'
 import { body } from 'express-validator'
-import loginRateLimiter from '../middleware/rateLimit'
+import loginRateLimiter, { refreshRateLimiter } from '../middleware/rateLimit'
 import validationHandler from '../middleware/validationHandler'
 
 const router = express.Router()
@@ -41,10 +41,9 @@ router.post(
 )
 router.get('/verify', verifyUser, verify)
 
-router.post('/refresh', validationHandler, refresh)
-router.post('/logout', validationHandler, logout)
-router.post('/refresh', loginRateLimiter, validationHandler, refresh)
-router.post('/logout', loginRateLimiter, validationHandler, logout)
+// Refresh and logout endpoints are rate-limited to mitigate abuse.
+router.post('/refresh', refreshRateLimiter, validationHandler, refresh)
+router.post('/logout', refreshRateLimiter, validationHandler, logout)
 
 // Sample protected admin route (returns basic info if user is admin)
 router.get(

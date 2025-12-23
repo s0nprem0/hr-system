@@ -15,13 +15,65 @@ import errorHandler from './middleware/errorHandler'
 export default function createApp() {
 	const app = express()
 
+	const isProd = process.env.NODE_ENV === 'production'
+
 	const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173'
 	app.use(helmet())
+
+	// In production behind a proxy (e.g. Heroku / nginx), trust the first proxy
+	// so that `req.secure` and `req.protocol` reflect the TLS state correctly.
+	if (isProd) {
+		app.set('trust proxy', 1)
+		// Enforce HSTS for production deployments
+		try {
+			app.use(
+				helmet.hsts({
+					maxAge: 60 * 60 * 24 * 365 * 2, // 2 years
+					includeSubDomains: true,
+					preload: true,
+				})
+			)
+		} catch (e) {
+			// If helmet.hsts is not available in this runtime, ignore and continue
+			// (HSTS is a best-effort enhancement for production only).
+		}
+
+		// Redirect plain HTTP to HTTPS when not already secure. This helps ensure
+		// cookies marked `Secure` are only sent over TLS.
+		app.use((req, res, next) => {
+			const forwardedProto = (req.headers['x-forwarded-proto'] || '') as string
+			if (req.secure || forwardedProto.startsWith('https')) return next()
+			const host = req.headers.host
+			if (!host) return next()
+			return res.redirect(301, `https://${host}${req.originalUrl}`)
+		})
+	}
 	app.use(morgan('combined'))
+	// Tighten CORS: accept only configured client origins (supports comma-separated list)
+	const originsEnv = process.env.CLIENT_URLS || process.env.CLIENT_URL || ''
+	const allowedOrigins = originsEnv
+		.split(',')
+		.map((s) => s.trim())
+		.filter(Boolean)
+
 	app.use(
 		cors({
-			origin: clientUrl,
+			origin: (origin, callback) => {
+				// Allow requests without Origin (e.g., same-origin, non-browser clients)
+				if (!origin) return callback(null, true)
+				if (allowedOrigins.includes(origin)) return callback(null, true)
+				return callback(new Error('CORS origin denied'))
+			},
 			credentials: true,
+			methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+			allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+			exposedHeaders: [
+				'RateLimit-Limit',
+				'RateLimit-Remaining',
+				'RateLimit-Reset',
+			],
+			preflightContinue: false,
+			optionsSuccessStatus: 204,
 		})
 	)
 
