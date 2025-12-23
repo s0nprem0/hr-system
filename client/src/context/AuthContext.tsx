@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import api from '../utils/api'
+import api, { getCsrfToken } from '../utils/api'
 import type { ApiResponse, UserDTO } from '@hr/shared'
 import { safeGetItem, safeSetItem, safeRemoveItem } from '../utils/storage'
 import { handleUnauthorized as handleUnauthorizedHelper } from '../utils/authRedirect'
@@ -102,7 +102,14 @@ export function AuthContext({ children }: { children: ReactNode }) {
 		safeRemoveItem('token')
 		// call server logout to revoke refresh cookie/token
 		try {
-			void api.post('/api/auth/logout', {}, { withCredentials: true })
+			void api.post(
+				'/api/auth/logout',
+				{},
+				{
+					withCredentials: true,
+					headers: { 'x-csrf-token': getCsrfToken() || '' },
+				}
+			)
 		} catch {
 			// ignore errors during best-effort logout
 		}

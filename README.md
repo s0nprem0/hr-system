@@ -284,22 +284,38 @@ Development notes:
 
 This project uses server-stored, single-use refresh tokens delivered as an `HttpOnly` cookie. Key points:
 
-- Server behavior:
+- On successful login the server issues an access JWT (returned in the JSON response) and creates a refresh token record in the database; the refresh token value is set in an `HttpOnly` cookie scoped to `/api/auth`.
+- When the client calls `/api/auth/refresh`, the server reads the cookie, validates and revokes the old refresh token, issues a new access token and a new refresh token cookie (single-use rotation).
+- On logout the server revokes the refresh token and clears the cookie.
 
-  - On successful login the server issues an access JWT (returned in the JSON response) and creates a refresh token record in the database; the refresh token value is set in an `HttpOnly` cookie scoped to `/api/auth`.
-  - When the client calls `/api/auth/refresh`, the server reads the cookie, validates and revokes the old refresh token, issues a new access token and a new refresh token cookie (single-use rotation).
-  - On logout the server revokes the refresh token and clears the cookie.
+- The client must call authentication endpoints with credentials so cookies are included: axios is configured with `withCredentials: true`.
+- The client stores only the access token (in memory / localStorage) and no longer persists refresh tokens in localStorage.
+- To refresh the access token the client calls `/api/auth/refresh` (no body) and receives a new access token in the JSON response; the refresh cookie is rotated by the server.
 
-- Client adjustments:
+**CSRF protection (double-submit cookie):**
 
-  - The client must call authentication endpoints with credentials so cookies are included: axios is configured with `withCredentials: true`.
-  - The client stores only the access token (in memory / localStorage) and no longer persists refresh tokens in localStorage.
-  - To refresh the access token the client calls `/api/auth/refresh` (no body) and receives a new access token in the JSON response; the refresh cookie is rotated by the server.
+- The server also issues a non-HttpOnly `csrfToken` cookie at login (and rotates it on refresh). Clients must read that cookie and include its value in the `x-csrf-token` request header when calling `/api/auth/refresh` or `/api/auth/logout`.
+- This is a simple double-submit CSRF mitigation that works with `HttpOnly` refresh cookies — the server verifies the header matches the cookie and rejects requests with a 403 if they don't match.
+- The client helper `getCsrfToken()` (in `client/src/utils/api.ts`) reads the `csrfToken` cookie and supplies the header automatically for refresh/logout requests.
 
 - Why this is safer:
 
   - `HttpOnly` cookies are inaccessible to JavaScript, reducing risk of token theft via XSS.
   - Server-side token rotation and revocation reduce replay risk if a refresh token is leaked.
+
+**Recent implementation notes (developer):**
+
+- The server now stores only a sha256 hash of refresh tokens (`tokenHash`) in the database — raw refresh values are never persisted.
+- Refresh tokens are delivered to the browser as `HttpOnly` cookies scoped to `/api/auth` and rotated on each `/api/auth/refresh` call (single-use tokens).
+- The server detects reuse of revoked refresh tokens and defensively revokes all refresh tokens for that user, then clears the cookie and logs the incident.
+- The client must call auth endpoints with cookies included; axios is configured with `withCredentials: true`. The client stores only the access token locally.
+- Tests and seeds were updated to account for the cookie/hash flow: test setup exposes a raw refresh value (for integration tests) but the DB stores a `tokenHash`. If you run backend tests locally, ensure `JWT_KEY` is set (the test setup provides a default `test-jwt-key` when missing) and that any legacy `token` index is removed (the test setup attempts to drop legacy indexes automatically).
+
+**Manual quick checks**
+
+- Login via API and verify the `Set-Cookie` header contains `refreshToken`.
+- Call `/api/auth/refresh` with the cookie present and verify the response contains a new access token and the refresh cookie is rotated.
+- Try to reuse an old refresh cookie value — the server should respond 401 and revoke all tokens for that user.
 
 - Quick manual test (example using `curl`):
 

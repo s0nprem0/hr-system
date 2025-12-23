@@ -132,6 +132,16 @@ const login = async (req: Request, res: Response) => {
 		}
 		// send raw token to client in httpOnly cookie; only the hash is stored server-side
 		res.cookie('refreshToken', refreshTokenValue, cookieOptions)
+		// Double-submit CSRF token (non-HttpOnly) so clients can read and include in requests
+		const csrfValue = crypto.randomBytes(16).toString('hex')
+		const csrfOptions = {
+			httpOnly: false,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax' as const,
+			path: '/',
+			maxAge: refreshTtlSeconds * 1000,
+		}
+		res.cookie('csrfToken', csrfValue, csrfOptions)
 
 		return sendSuccess(
 			res,
@@ -183,6 +193,16 @@ const refresh = async (req: Request, res: Response) => {
 	try {
 		// allow refresh token via httpOnly cookie or request body (backwards compatible)
 		const incomingRefresh = req.cookies?.refreshToken || req.body?.refreshToken
+		// verify double-submit CSRF token
+		const incomingCsrfHeader = (req.headers['x-csrf-token'] || '') as string
+		const csrfCookie = req.cookies?.csrfToken
+		if (
+			!incomingCsrfHeader ||
+			!csrfCookie ||
+			incomingCsrfHeader !== csrfCookie
+		) {
+			return sendError(res, 'CSRF token missing or invalid', 403)
+		}
 		if (!incomingRefresh) return sendError(res, 'Refresh token required', 400)
 		// Atomically find the refresh token which is not revoked and not expired, and mark it revoked in one operation.
 		const now = new Date()
@@ -274,6 +294,15 @@ const refresh = async (req: Request, res: Response) => {
 			maxAge: refreshTtlSeconds2 * 1000,
 		}
 		res.cookie('refreshToken', newRefreshValue, cookieOptions2)
+		// rotate csrf token as well
+		const newCsrf = crypto.randomBytes(16).toString('hex')
+		res.cookie('csrfToken', newCsrf, {
+			httpOnly: false,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'lax',
+			path: '/',
+			maxAge: refreshTtlSeconds2 * 1000,
+		})
 
 		return sendSuccess(res, { token }, 200)
 	} catch (err: unknown) {
@@ -285,6 +314,17 @@ const refresh = async (req: Request, res: Response) => {
 
 const logout = async (req: Request, res: Response) => {
 	try {
+		// Require CSRF header for logout as well (double-submit)
+		const incomingCsrfHeader = (req.headers['x-csrf-token'] || '') as string
+		const csrfCookie = req.cookies?.csrfToken
+		if (
+			!incomingCsrfHeader ||
+			!csrfCookie ||
+			incomingCsrfHeader !== csrfCookie
+		) {
+			return sendError(res, 'CSRF token missing or invalid', 403)
+		}
+
 		// Allow cookie or body token for logout
 		const incomingRefresh = req.cookies?.refreshToken || req.body?.refreshToken
 		if (!incomingRefresh) return sendError(res, 'Refresh token required', 400)

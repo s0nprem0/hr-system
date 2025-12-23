@@ -57,10 +57,11 @@ function onRefreshFailed(err: unknown) {
 
 async function refreshAuth(): Promise<string> {
 	// Server stores refresh token in httpOnly cookie; call refresh endpoint without body
+	// Include double-submit CSRF header read from non-HttpOnly `csrfToken` cookie.
 	const resp = await axios.post<ApiResponse<AuthRefreshResponse>>(
 		`${API_URL}/api/auth/refresh`,
 		{},
-		{ withCredentials: true }
+		{ withCredentials: true, headers: { 'x-csrf-token': getCsrfToken() } }
 	)
 
 	const data = resp.data
@@ -154,3 +155,12 @@ api.interceptors.response.use(
 )
 
 export default api
+
+// Helper to read the csrf cookie value for double-submit protection
+export function getCsrfToken(): string | null {
+	if (typeof document === 'undefined') return null
+	const m = document.cookie.match(
+		new RegExp('(?:^|; )' + 'csrfToken' + '=([^;]*)')
+	)
+	return m ? decodeURIComponent(m[1]) : null
+}
