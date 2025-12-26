@@ -7,6 +7,7 @@ describe('Auth refresh flow (integration)', () => {
 	it('returns a new access token when provided a valid refresh token', async () => {
 		// Prefer a seeded refresh token set by test setup to avoid repeated login attempts
 		let csrfToken: string | undefined
+		let refreshTokenCandidate: string | undefined
 		const refreshToken =
 			process.env.ADMIN_REFRESH ||
 			(await (async () => {
@@ -19,20 +20,26 @@ describe('Auth refresh flow (integration)', () => {
 					})
 				expect(loginRes.status).toBe(200)
 				// Extract refresh token and csrf token from Set-Cookie header (cookie-based flow)
-				const sc = loginRes.headers['set-cookie']
+				const sc: string[] = Array.isArray(loginRes.headers['set-cookie'])
+					? loginRes.headers['set-cookie']
+					: []
 				if (sc && Array.isArray(sc)) {
+					const map: Record<string, string> = {}
 					for (const c of sc) {
-						const m = c.match(/refreshToken=([^;]+);/)
-						if (m) {
-							// also try to capture csrf token from same response
-							const m2 = sc.find((s: string) => /csrfToken=([^;]+);/.test(s))
-							if (m2) {
-								const mm = m2.match(/csrfToken=([^;]+);/)
-								if (mm) csrfToken = mm[1]
-							}
-							return m[1]
-						}
+						if (!c) continue
+						const kv = c.split(';')[0]
+						if (!kv) continue
+						const parts = kv.split('=')
+						const rawName = parts[0] ?? ''
+						const rest = parts.slice(1)
+						const name = rawName.trim()
+						if (!name || rest.length === 0) continue
+						const val = rest.join('=').trim()
+						map[name] = val
 					}
+					if (map.refreshToken) refreshTokenCandidate = map.refreshToken
+					if (map.csrfToken) csrfToken = map.csrfToken
+					if (refreshTokenCandidate) return refreshTokenCandidate
 				}
 				return undefined
 			})())

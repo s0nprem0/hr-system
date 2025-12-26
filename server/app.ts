@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import mongoose from 'mongoose'
 import authRouter from './routes/auth'
+import csrfProtection from './middleware/csrfProtection'
 import usersRouter from './routes/users'
 import employeesRouter from './routes/employees'
 import departmentsRouter from './routes/departments'
@@ -81,12 +82,19 @@ export default function createApp() {
 	// parse cookies for refresh token handling
 	app.use(cookieParser())
 
-	app.use('/api/auth', authRouter)
-	app.use('/api/users', usersRouter)
-	app.use('/api/employees', employeesRouter)
-	app.use('/api/departments', departmentsRouter)
-	app.use('/api/payroll', payrollRouter)
-	app.use('/api/audits', auditsRouter)
+	// Apply server-side CSRF protection to auth routes (double-submit + origin/referrer
+	// fallback). The auth controller already performs header+cookie checks for refresh
+	// and logout; this middleware provides an additional centralized check for other
+	// state-changing requests under /api/auth.
+	app.use('/api/auth', csrfProtection(), authRouter)
+	// Apply CSRF protection to state-changing API routes. Safe (GET/HEAD/OPTIONS)
+	// requests are allowed through the middleware; state-changing requests
+	// require either the double-submit CSRF header+cookie or a validated origin.
+	app.use('/api/users', csrfProtection(), usersRouter)
+	app.use('/api/employees', csrfProtection(), employeesRouter)
+	app.use('/api/departments', csrfProtection(), departmentsRouter)
+	app.use('/api/payroll', csrfProtection(), payrollRouter)
+	app.use('/api/audits', csrfProtection(), auditsRouter)
 
 	app.get('/health', (req, res) => {
 		const uptime = process.uptime()
