@@ -11,6 +11,7 @@ import employeesRouter from './routes/employees'
 import departmentsRouter from './routes/departments'
 import payrollRouter from './routes/payroll'
 import auditsRouter from './routes/audits'
+import overviewRouter from './routes/overview'
 import errorHandler from './middleware/errorHandler'
 
 export default function createApp() {
@@ -95,6 +96,7 @@ export default function createApp() {
 	app.use('/api/departments', csrfProtection(), departmentsRouter)
 	app.use('/api/payroll', csrfProtection(), payrollRouter)
 	app.use('/api/audits', csrfProtection(), auditsRouter)
+	app.use('/api/overview', csrfProtection(), overviewRouter)
 
 	app.get('/health', (req, res) => {
 		const uptime = process.uptime()
