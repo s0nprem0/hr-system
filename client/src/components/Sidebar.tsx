@@ -21,6 +21,12 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
 	if (!auth?.user) return null
 
+	// Helper to keep the JSX clean and consistent
+	const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
+		`group flex items-center gap-(--space-3) px-(--space-4) py-(--space-3) rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
+			isActive ? 'bg-(--cp-cta) text-white font-semibold' : 'hover:bg-(--cp-bg)'
+		}`
+
 	return (
 		<>
 			{/* Overlay for mobile */}
@@ -28,10 +34,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 				<div
 					className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
 					onClick={onClose}
+					aria-hidden="true" // Fixes accessibility linting
 				/>
 			)}
 
-			{/* Sidebar */}
 			<aside
 				role="navigation"
 				aria-label="Main navigation"
@@ -39,14 +45,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 					isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
 				}`}
 			>
-				<div className="p-6">
-					<div className="flex items-center justify-between mb-8">
-						<div className="flex items-center gap-2">
+				<div className="p-(--space-5)">
+					<div className="flex items-center justify-between mb-(--space-6)">
+						<div className="flex items-center gap-(--space-2)">
 							<Briefcase className="h-6 w-6 text-(--cp-cta)" />
 							<span className="text-xl font-bold">HR System</span>
 						</div>
 						<button
-							className="md:hidden p-1 hover:bg-(--cp-bg) rounded-md"
+							className="md:hidden p-(--space-1) hover:bg-(--cp-bg) rounded-md"
 							onClick={onClose}
 							aria-label="Close menu"
 						>
@@ -58,30 +64,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 						<NavLink
 							to="/dashboard"
 							onClick={onClose}
-							className={({ isActive }) =>
-								`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
-									isActive
-										? 'bg-(--cp-cta) text-white font-semibold'
-										: 'hover:bg-(--cp-bg)'
-								}`
-							}
+							className={navLinkClasses}
 						>
 							<LayoutDashboard className="h-5 w-5" />
 							<span>Dashboard</span>
 						</NavLink>
 
 						{auth.can('manageUsers') && (
-							<NavLink
-								to="/users"
-								onClick={onClose}
-								className={({ isActive }) =>
-									`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
-										isActive
-											? 'bg-(--cp-cta) text-white font-semibold'
-											: 'hover:bg-(--cp-bg)'
-									}`
-								}
-							>
+							<NavLink to="/users" onClick={onClose} className={navLinkClasses}>
 								<Users className="h-5 w-5" />
 								<span>Users</span>
 							</NavLink>
@@ -91,13 +81,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 							<NavLink
 								to="/employees"
 								onClick={onClose}
-								className={({ isActive }) =>
-									`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
-										isActive
-											? 'bg-(--cp-cta) text-white font-semibold'
-											: 'hover:bg-(--cp-bg)'
-									}`
-								}
+								className={navLinkClasses}
 							>
 								<User className="h-5 w-5" />
 								<span>Employees</span>
@@ -108,13 +92,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 							<NavLink
 								to="/departments"
 								onClick={onClose}
-								className={({ isActive }) =>
-									`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
-										isActive
-											? 'bg-(--cp-cta) text-white font-semibold'
-											: 'hover:bg-(--cp-bg)'
-									}`
-								}
+								className={navLinkClasses}
 							>
 								<Building2 className="h-5 w-5" />
 								<span>Departments</span>
@@ -125,13 +103,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 							<NavLink
 								to="/payroll"
 								onClick={onClose}
-								className={({ isActive }) =>
-									`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
-										isActive
-											? 'bg-(--cp-cta) text-white font-semibold'
-											: 'hover:bg-(--cp-bg)'
-									}`
-								}
+								className={navLinkClasses}
 							>
 								<DollarSign className="h-5 w-5" />
 								<span>Payroll</span>
@@ -142,13 +114,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 							<NavLink
 								to="/audits"
 								onClick={onClose}
-								className={({ isActive }) =>
-									`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 ${
-										isActive
-											? 'bg-(--cp-cta) text-white font-semibold'
-											: 'hover:bg-(--cp-bg)'
-									}`
-								}
+								className={navLinkClasses}
 							>
 								<FileText className="h-5 w-5" />
 								<span>Audit Logs</span>
@@ -156,18 +122,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 						)}
 					</nav>
 
-					<div className="mt-8 pt-8 border-t border-(--cp-border)">
-						<NavLink
-							to="/profile"
-							onClick={onClose}
-							className={({ isActive }) =>
-								`group flex items-center gap-3 px-4 py-3 rounded-md transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) ${
-									isActive
-										? 'bg-(--cp-cta) text-white font-semibold'
-										: 'hover:bg-(--cp-bg)'
-								}`
-							}
-						>
+					<div className="mt-(--space-6) pt-(--space-6) border-t border-(--cp-border)">
+						<NavLink to="/profile" onClick={onClose} className={navLinkClasses}>
 							<User className="h-5 w-5" />
 							<div className="flex flex-col">
 								<span className="font-medium">{auth.user.name}</span>

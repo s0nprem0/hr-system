@@ -272,7 +272,7 @@ const AuditLogs = () => {
 									setPageSize(Number(e.target.value))
 									setPage(1)
 								}}
-								className="rounded border px-2 py-1"
+								className="rounded border px-(--space-2) py-(--space-1)"
 							>
 								<option value={10}>10</option>
 								<option value={25}>25</option>

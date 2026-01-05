@@ -51,10 +51,10 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 			<div className="h-full container-main flex items-center justify-between">
 				<div className="md:flex-1" />
 
-				<div className="flex items-center gap-4">
+				<div className="flex items-center gap-(--space-4)">
 					<Button
 						variant="ghost"
-						className="md:hidden p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta)"
+						className="md:hidden p-(--space-2) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta)"
 						onClick={onMenuToggle}
 						aria-label="Toggle menu"
 					>
@@ -68,7 +68,7 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 							aria-haspopup="menu"
 							aria-expanded={menuOpen}
 							onClick={() => setMenuOpen((s) => !s)}
-							className="inline-flex items-center gap-2 rounded-md p-1 hover:bg-(--cp-bg) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta)"
+							className="inline-flex items-center gap-(--space-2) rounded-md p-(--space-1) hover:bg-(--cp-bg) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta)"
 							aria-label="Open profile menu"
 						>
 							<span
@@ -81,7 +81,7 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 									.join('')
 									.slice(0, 2)}
 							</span>
-							<span className="hidden md:inline ml-2 font-medium text-sm truncate max-w-36">
+							<span className="hidden md:inline ml-(--space-2) font-medium text-sm truncate max-w-36">
 								{auth.user.name}
 							</span>
 						</button>
@@ -90,12 +90,12 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 							<div
 								role="menu"
 								aria-label="Profile"
-								className="absolute right-0 mt-2 w-44 rounded-md border-(--cp-border) bg-(--cp-surface) shadow-lg z-50"
+								className="absolute right-0 mt-(--space-2) w-44 rounded-md border-(--cp-border) bg-(--cp-surface) shadow-lg z-50"
 							>
 								<div className="py-1">
 									<Link
 										to="/profile"
-										className="block px-4 py-2 text-sm hover:bg-(--cp-bg)"
+										className="block px-(--space-4) py-(--space-2) text-sm hover:bg-(--cp-bg)"
 										onClick={() => setMenuOpen(false)}
 										role="menuitem"
 									>
@@ -104,7 +104,7 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 									<button
 										type="button"
 										onClick={handleLogout}
-										className="w-full text-left px-4 py-2 text-sm hover:bg-(--cp-bg)"
+										className="w-full text-left px-(--space-4) py-(--space-2) text-sm hover:bg-(--cp-bg)"
 										role="menuitem"
 									>
 										<span className="inline-flex items-center gap-2">

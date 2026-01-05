@@ -30,7 +30,7 @@ body {
 
 /* button */
 .btn {
-	@apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-shadow shadow-sm; /* Apply Tailwind utilities */
+	@apply inline-flex items-center justify-center rounded-md px-(--space-4) py-(--space-2) text-sm font-medium transition-shadow shadow-sm; /* Apply Tailwind utilities */
 	background-color: var(--cp-primary);
 	color: var(--cp-primary-foreground);
 }
@@ -41,7 +41,7 @@ body {
 
 /* card */
 .card {
-	@apply rounded-lg p-6 shadow; /* Apply Tailwind utilities */
+	@apply rounded-lg p-(--space-5) shadow; /* Apply Tailwind utilities */
 	background-color: var(--cp-surface);
 	border: var(--border-width) solid var(--cp-border);
 	/* use tokenized shadow */
@@ -50,7 +50,7 @@ body {
 
 /* container */
 .container-main {
-	@apply max-w-5xl mx-auto px-4; /* Apply Tailwind utilities */
+	@apply max-w-5xl mx-auto px-(--space-4); /* Apply Tailwind utilities */
 }
 
 /* muted text */

@@ -197,22 +197,22 @@ export default function EmployeeFormStepper() {
 
 	return (
 		<>
-			<div className="p-6 bg-white rounded shadow">
+			<div className="p-(--space-5) bg-white rounded shadow">
 				<h2 className="text-xl font-semibold mb-4">Add / Edit Employee</h2>
 
 				{hasDraft && (
-					<div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-300 flex items-center justify-between">
+					<div className="mb-(--space-4) p-(--space-3) bg-yellow-50 border-l-4 border-yellow-300 flex items-center justify-between">
 						<div className="text-sm">A draft is available for this form.</div>
 						<div className="flex gap-2">
 							<button
 								onClick={resumeDraft}
-								className="px-2 py-1 bg-white rounded border text-sm"
+								className="px-(--space-2) py-(--space-1) bg-white rounded border text-sm"
 							>
 								Resume
 							</button>
 							<button
 								onClick={discardDraft}
-								className="px-2 py-1 bg-white rounded border text-sm"
+								className="px-(--space-2) py-(--space-1) bg-white rounded border text-sm"
 							>
 								Discard
 							</button>
@@ -220,12 +220,12 @@ export default function EmployeeFormStepper() {
 					</div>
 				)}
 
-				<nav className="mb-4 flex gap-2">
+				<nav className="mb-(--space-4) flex gap-(--space-2)">
 					{steps.map((s, i) => (
 						<button
 							key={s}
 							onClick={() => setStep(i)}
-							className={`px-3 py-1 rounded ${
+							className={`px-(--space-3) py-(--space-1) rounded ${
 								i === step ? 'bg-blue-600 text-white' : 'bg-gray-100'
 							}`}
 						>
@@ -244,7 +244,7 @@ export default function EmployeeFormStepper() {
 								aria-invalid={!!formErrors.firstName}
 								value={draft.firstName ?? ''}
 								onChange={(e) => update({ firstName: e.target.value })}
-								className="w-full border rounded p-2"
+								className="w-full border rounded p-(--space-2)"
 							/>
 							<input
 								placeholder="Last name"
@@ -252,7 +252,7 @@ export default function EmployeeFormStepper() {
 								aria-invalid={!!formErrors.lastName}
 								value={draft.lastName ?? ''}
 								onChange={(e) => update({ lastName: e.target.value })}
-								className="w-full border rounded p-2"
+								className="w-full border rounded p-(--space-2)"
 							/>
 							<input
 								type="email"
@@ -261,7 +261,7 @@ export default function EmployeeFormStepper() {
 								aria-invalid={!!formErrors.email}
 								value={draft.email ?? ''}
 								onChange={(e) => update({ email: e.target.value })}
-								className="w-full border rounded p-2"
+								className="w-full border rounded p-(--space-2)"
 							/>
 						</div>
 					)}
@@ -302,14 +302,17 @@ export default function EmployeeFormStepper() {
 					)}
 
 					{step === 3 && (
-						<div className="border-2 border-dashed border-gray-200 p-6 rounded text-center">
+						<div className="border-2 border-dashed border-gray-200 p-(--space-5) rounded text-center">
 							Upload files (placeholder)
 						</div>
 					)}
 				</div>
 
-				<div className="mt-6 flex gap-3 items-center">
-					<button onClick={back} className="px-3 py-2 bg-gray-100 rounded">
+				<div className="mt-(--space-6) flex gap-(--space-3) items-center">
+					<button
+						onClick={back}
+						className="px-(--space-3) py-(--space-2) bg-gray-100 rounded"
+					>
 						Back
 					</button>
 
@@ -317,7 +320,7 @@ export default function EmployeeFormStepper() {
 						<button
 							onClick={handleNext}
 							disabled={saving}
-							className={`px-3 py-2 bg-blue-600 text-white rounded ${
+							className={`px-(--space-3) py-(--space-2) bg-blue-600 text-white rounded ${
 								saving ? 'opacity-50 cursor-not-allowed' : ''
 							}`}
 						>
@@ -327,7 +330,7 @@ export default function EmployeeFormStepper() {
 						<button
 							onClick={submit}
 							disabled={saving}
-							className={`px-3 py-2 bg-green-600 text-white rounded ${
+							className={`px-(--space-3) py-(--space-2) bg-green-600 text-white rounded ${
 								saving ? 'opacity-50 cursor-not-allowed' : ''
 							}`}
 						>
@@ -340,7 +343,7 @@ export default function EmployeeFormStepper() {
 							localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
 						}
 						disabled={saving}
-						className={`ml-auto px-3 py-2 bg-yellow-100 rounded ${
+						className={`ml-auto px-(--space-3) py-(--space-2) bg-yellow-100 rounded ${
 							saving ? 'opacity-50 cursor-not-allowed' : ''
 						}`}
 					>
@@ -350,7 +353,7 @@ export default function EmployeeFormStepper() {
 					<button
 						onClick={clearDraft}
 						disabled={saving}
-						className={`px-3 py-2 bg-red-100 rounded ${
+						className={`px-(--space-3) py-(--space-2) bg-red-100 rounded ${
 							saving ? 'opacity-50 cursor-not-allowed' : ''
 						}`}
 					>
@@ -370,10 +373,10 @@ export default function EmployeeFormStepper() {
 						You're about to create a new employee with the following temporary
 						password. Share it securely with the user.
 					</p>
-					<div className="mt-2 p-3 bg-gray-50 rounded border flex items-center justify-between">
+					<div className="mt-(--space-2) p-(--space-3) bg-gray-50 rounded border flex items-center justify-between">
 						<code className="font-mono">{generatedPassword}</code>
 						<button
-							className="ml-4 px-2 py-1 bg-white rounded border text-sm"
+							className="ml-(--space-4) px-(--space-2) py-(--space-1) bg-white rounded border text-sm"
 							onClick={copyPassword}
 						>
 							Copy

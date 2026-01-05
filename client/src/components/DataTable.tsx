@@ -46,7 +46,9 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
 	if (data.length === 0) {
 		return (
-			<Card className="text-center py-8 text-(--cp-muted)">{emptyMessage}</Card>
+			<Card className="text-center py-(--space-6) text-(--cp-muted)">
+				{emptyMessage}
+			</Card>
 		)
 	}
 
@@ -55,10 +57,10 @@ export function DataTable<T extends object>({
 	return (
 		<div className="overflow-x-auto">
 			{hiddenCols.length > 0 && (
-				<div className="mb-2 text-sm text-gray-600 flex items-center gap-2">
+				<div className="mb-(--space-2) text-sm text-gray-600 flex items-center gap-(--space-2)">
 					<span>Some columns are hidden due to permissions.</span>
 					<span
-						className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 cursor-help"
+						className="px-(--space-2) py-(--space-1) bg-gray-100 rounded text-xs text-gray-700 cursor-help"
 						title={hiddenCols.map((c) => c.header).join(', ')}
 					>
 						View hidden: {hiddenCols.length}
@@ -78,7 +80,7 @@ export function DataTable<T extends object>({
 								<th
 									key={String(col.key)}
 									scope="col"
-									className={`text-left p-3 text-sm font-medium ${
+									className={`text-left p-(--space-3) text-sm font-medium ${
 										col.className || ''
 									}`}
 								>
@@ -86,7 +88,9 @@ export function DataTable<T extends object>({
 								</th>
 							))}
 						{actions.length > 0 && (
-							<th className="text-left p-3 text-sm font-medium">Actions</th>
+							<th className="text-left p-(--space-3) text-sm font-medium">
+								Actions
+							</th>
 						)}
 					</tr>
 				</thead>
@@ -105,7 +109,7 @@ export function DataTable<T extends object>({
 									.map((col) => (
 										<td
 											key={String(col.key)}
-											className={`p-3 text-sm ${col.className || ''}`}
+											className={`p-(--space-3) text-sm ${col.className || ''}`}
 										>
 											{col.render
 												? col.render(item)
@@ -114,8 +118,8 @@ export function DataTable<T extends object>({
 									))}
 
 								{actions.length > 0 && (
-									<td className="p-3">
-										<div className="inline-flex gap-2">
+									<td className="p-(--space-3)">
+										<div className="inline-flex gap-(--space-2)">
 											{actions
 												.filter(
 													(action) =>
@@ -134,7 +138,7 @@ export function DataTable<T extends object>({
 																to={href}
 																className={action.className}
 															>
-																<Button className="px-2 py-1 text-sm">
+																<Button className="px-(--space-2) py-(--space-1) text-sm">
 																	{action.label}
 																</Button>
 															</Link>
@@ -144,7 +148,7 @@ export function DataTable<T extends object>({
 													return (
 														<Button
 															key={index}
-															className={`px-2 py-1 text-sm ${
+															className={`px-(--space-2) py-(--space-1) text-sm ${
 																action.className || ''
 															}`}
 															onClick={
