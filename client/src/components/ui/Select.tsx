@@ -10,7 +10,7 @@ export interface SelectProps
 }
 
 const selectClasses = cva(
-	'mt-1 block w-full px-3 py-2 border rounded-md bg-(--cp-surface) text-(--cp-text) placeholder:text-(--cp-muted) border-(--cp-border) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) disabled:opacity-70 disabled:cursor-not-allowed',
+	'mt-1 block w-full px-(--space-3) py-(--space-2) border rounded-md bg-(--cp-surface) text-(--cp-text) placeholder:text-(--cp-muted) border-(--cp-border) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta) disabled:opacity-70 disabled:cursor-not-allowed',
 	{
 		variants: {
 			variant: {
