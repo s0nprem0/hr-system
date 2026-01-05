@@ -260,4 +260,61 @@ export async function updateUserAndProfile(
 	}
 }
 
-export default { createUserAndProfile, publishDraft, updateUserAndProfile }
+export default {
+	createUserAndProfile,
+	publishDraft,
+	updateUserAndProfile,
+	deleteUserAndProfile,
+}
+
+/**
+ * Delete a user and their profile within a transaction and emit an audit log.
+ */
+export async function deleteUserAndProfile(
+	userId: string | mongoose.Types.ObjectId,
+	auditUserId?: mongoose.Types.ObjectId | string | undefined
+) {
+	const session = await mongoose.startSession()
+	session.startTransaction()
+	try {
+		const id =
+			typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId
+
+		const removedUser = await User.findByIdAndDelete(id, { session })
+		if (!removedUser) {
+			await session.abortTransaction()
+			return null
+		}
+
+		await EmployeeProfile.findOneAndDelete({ user: id }, { session })
+
+		await session.commitTransaction()
+
+		try {
+			const auditUserObj = auditUserId
+				? typeof auditUserId === 'string'
+					? new mongoose.Types.ObjectId(String(auditUserId))
+					: (auditUserId as mongoose.Types.ObjectId)
+				: undefined
+			await safeAuditLog({
+				collectionName: 'users',
+				action: 'delete',
+				documentId: removedUser._id,
+				user: auditUserObj,
+				message: `User deleted by ${auditUserObj ?? 'system'}`,
+			})
+		} catch (e) {
+			logger.warn(
+				{ err: e },
+				'employeeService.deleteUserAndProfile: audit failed'
+			)
+		}
+
+		return removedUser
+	} catch (err) {
+		await session.abortTransaction()
+		throw err
+	} finally {
+		session.endSession()
+	}
+}

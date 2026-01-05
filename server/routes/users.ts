@@ -65,11 +65,26 @@ router.delete(
 	async (req: Request, res: Response) => {
 		try {
 			const { id } = req.params
-			const deleted = await User.findByIdAndDelete(id)
-				.select('-password')
-				.lean()
-			if (!deleted) return sendError(res, 'User not found', 404)
-			return sendSuccess(res, { user: deleted })
+			if (!id) return sendError(res, 'User id required', 400)
+			if (!id) return sendError(res, 'User id required', 400)
+
+			const authUser = req.user
+			const auditUserId = authUser?._id
+
+			const removed = await employeeService.deleteUserAndProfile(
+				id,
+				auditUserId
+			)
+			if (!removed) return sendError(res, 'User not found', 404)
+
+			return sendSuccess(res, {
+				user: {
+					_id: removed._id,
+					name: removed.name,
+					email: removed.email,
+					role: removed.role,
+				},
+			})
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err)
 			return sendError(res, msg, 500)
@@ -87,6 +102,7 @@ router.get(
 	async (req: Request, res: Response) => {
 		try {
 			const { id } = req.params
+			if (!id) return sendError(res, 'User id required', 400)
 			const user = await User.findById(id).select('-password').lean()
 			if (!user) return sendError(res, 'User not found', 404)
 			return sendSuccess(res, user)
@@ -179,33 +195,28 @@ router.put(
 		try {
 			const { id } = req.params
 
-			// Safe update construction
+			const authUser = req.user
+			const auditUserId = authUser?._id
+
+			// Build allowlist for updates - only permitted fields
 			const updates: Record<string, any> = {}
-			if (req.body.name) updates.name = req.body.name
-			if (req.body.email) updates.email = req.body.email
-			if (req.body.role) updates.role = req.body.role
-			if (req.body.password) {
-				const bcrypt = await import('bcryptjs')
-				updates.password = await bcrypt.hash(req.body.password, 10)
-			}
+			if (typeof req.body.name !== 'undefined') updates.name = req.body.name
+			if (typeof req.body.email !== 'undefined') updates.email = req.body.email
+			if (typeof req.body.password !== 'undefined')
+				updates.password = req.body.password
+			if (typeof req.body.role !== 'undefined') updates.role = req.body.role
 
-			const before = await User.findById(id).lean()
-			const updated = await User.findByIdAndUpdate(id, updates, {
-				new: true,
-			}).select('-password')
+			const result = await employeeService.updateUserAndProfile(
+				id as string,
+				updates,
+				auditUserId
+			)
+			if (!result || !result.user) return sendError(res, 'User not found', 404)
 
-			if (!updated) return sendError(res, 'User not found', 404)
-
-			await safeAuditLog({
-				collectionName: 'User',
-				documentId: id,
-				action: 'update',
-				user: req.user?._id,
-				before,
-				after: updated,
-			})
-
-			return sendSuccess(res, updated)
+			const userSafe = await User.findById(result.user._id)
+				.select('-password')
+				.lean()
+			return sendSuccess(res, userSafe)
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err)
 			return sendError(res, msg, 500)
