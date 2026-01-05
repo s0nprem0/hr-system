@@ -70,6 +70,33 @@ router.post(
 	'/draft',
 	verifyUser,
 	requirePermission('manageEmployees'),
+	// validate draft payload: only allow expected fields and types
+	body('firstName')
+		.optional()
+		.isString()
+		.trim()
+		.isLength({ max: 200 })
+		.withMessage('firstName must be a short string'),
+	body('lastName')
+		.optional()
+		.isString()
+		.trim()
+		.isLength({ max: 200 })
+		.withMessage('lastName must be a short string'),
+	body('email').optional().isEmail().withMessage('valid email is required'),
+	body('jobTitle').optional().isString().trim().isLength({ max: 200 }),
+	body('department')
+		.optional()
+		.isMongoId()
+		.withMessage('invalid department id'),
+	body('salary')
+		.optional()
+		.custom((v) => {
+			if (v == null || String(v).trim() === '') return true
+			return !Number.isNaN(Number(v))
+		})
+		.withMessage('salary must be a number'),
+	validationHandler,
 	saveDraft
 )
 
