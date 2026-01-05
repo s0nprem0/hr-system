@@ -6,6 +6,7 @@ import EmployeeProfile from '../models/EmployeeProfile'
 import logger from '../logger'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import safeAuditLog from '../utils/auditLogger'
+import employeeService from '../services/employeeService'
 
 // Define types locally or import them if available in your project types
 type AuthUser = {
@@ -169,64 +170,25 @@ const getEmployee = async (req: Request, res: Response) => {
 }
 
 const createEmployee = async (req: Request, res: Response) => {
-	const session = await mongoose.startSession()
-	session.startTransaction()
 	try {
 		const { name, email, password, role, profile } = req.body
 
-		const existing = await User.findOne({ email }).session(session)
-		if (existing) {
-			await session.abortTransaction()
-			return sendError(res, 'Email already in use', 409)
+		// Preserve existing behavior: if an account exists with the email, return 409
+		const existing = await User.findOne({ email })
+		if (existing) return sendError(res, 'Email already in use', 409)
+
+		const dto = {
+			name,
+			email,
+			password,
+			role,
+			profile: {
+				designation: profile?.designation || profile?.jobTitle,
+				department: profile?.department,
+				salary: profile?.salary != null ? Number(profile.salary) : undefined,
+			},
 		}
 
-		const hashed = await bcrypt.hash(password, 10)
-
-		// 1. Create User
-		const createdUsers = await User.create(
-			[
-				{
-					name,
-					email,
-					password: hashed,
-					role: role || 'employee',
-				},
-			],
-			{ session }
-		)
-		const createdUser = createdUsers && createdUsers[0]
-		if (!createdUser) {
-			await session.abortTransaction()
-			return sendError(res, 'Failed to create user', 500)
-		}
-
-		// 2. Create Profile
-		// Map legacy 'profile' body structure to new EmployeeProfile fields
-		const salary = Number(profile?.salary)
-		const profileData = {
-			user: createdUser._id,
-			department: profile?.department,
-			jobTitle: profile?.designation || profile?.jobTitle, // Handle legacy key
-			salary: !Number.isNaN(salary) ? salary : 0,
-			status: 'active',
-		}
-
-		// cast to any-ish shape to satisfy mongoose typing for create()
-		const createdProfiles = await EmployeeProfile.create(
-			[profileData as unknown as Record<string, unknown>],
-			{
-				session,
-			}
-		)
-		const createdProfile = createdProfiles && createdProfiles[0]
-		if (!createdProfile) {
-			await session.abortTransaction()
-			return sendError(res, 'Failed to create profile', 500)
-		}
-
-		await session.commitTransaction()
-
-		// Audit
 		const authUser = req.user as AuthUser | undefined
 		const auditUserId = authUser?._id
 			? typeof authUser._id === 'string'
@@ -234,23 +196,16 @@ const createEmployee = async (req: Request, res: Response) => {
 				: (authUser._id as mongoose.Types.ObjectId)
 			: undefined
 
-		safeAuditLog({
-			collectionName: 'users',
-			action: 'create',
-			documentId: createdUser._id,
-			user: auditUserId,
-			after: mergeUserProfile(createdUser, createdProfile),
-			message: `User created by ${authUser?.email || 'system'}`,
-		}).catch(() => undefined)
+		const result = await employeeService.createUserAndProfile(
+			dto as any,
+			auditUserId
+		)
 
-		return sendSuccess(res, mergeUserProfile(createdUser, createdProfile), 201)
+		return sendSuccess(res, mergeUserProfile(result.user, result.profile), 201)
 	} catch (err: unknown) {
-		await session.abortTransaction()
 		const message = err instanceof Error ? err.message : String(err)
 		logger.error({ err }, 'createEmployee error')
 		return sendError(res, message, 500)
-	} finally {
-		session.endSession()
 	}
 }
 
