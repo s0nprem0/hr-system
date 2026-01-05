@@ -74,8 +74,7 @@ const saveDraft = async (req: Request, res: Response) => {
 	}
 }
 
-import User from '../models/User'
-import EmployeeProfile from '../models/EmployeeProfile'
+import employeeService from '../services/employeeService'
 
 const publishDraft = async (req: Request, res: Response) => {
 	try {
@@ -98,52 +97,24 @@ const publishDraft = async (req: Request, res: Response) => {
 		if (!validation.isEmail(data.email))
 			return sendError(res, 'Invalid email', 400)
 
-		// find or create user
-		let user = await User.findOne({ email: data.email })
-		if (!user) {
-			user = await User.create({
-				name: `${data.firstName} ${data.lastName}`.trim(),
-				email: data.email,
-				password: 'ChangeMe@123',
-				role: 'employee',
-			})
-		} else {
-			user.name = `${data.firstName} ${data.lastName}`.trim()
-			await user.save()
-		}
+		const auditUserId = new mongoose.Types.ObjectId(String(userId))
+		const result = await employeeService.publishDraft(data, auditUserId)
 
-		// create or update EmployeeProfile
-		const profileData: any = {}
-		if (data.department && validation.isObjectId(data.department))
-			profileData.department = data.department
-		if (data.jobTitle) profileData.jobTitle = data.jobTitle
-		if (data.salary != null) profileData.salary = data.salary
-
-		const existingProfile = await EmployeeProfile.findOne({ user: user._id })
-		if (existingProfile) {
-			Object.assign(existingProfile, profileData)
-			await existingProfile.save()
-		} else {
-			await EmployeeProfile.create(
-				Object.assign({ user: user._id }, profileData)
-			)
-		}
-
-		// clear draft
+		// clear draft after successful publish
 		await EmployeeDraft.deleteOne({ user: userId })
 
-		// audit
+		// audit the draft publish (non-blocking)
 		safeAuditLog({
 			collectionName: 'employeeDrafts',
-			documentId: user._id,
+			documentId: result.user._id,
 			action: 'publish',
-			user: new mongoose.Types.ObjectId(String(userId)),
+			user: auditUserId,
 			before: draft.data,
-			after: { user: user._id, profile: profileData },
+			after: { user: result.user._id, profile: result.profile },
 			message: 'Published employee draft',
 		}).catch(() => undefined)
 
-		return sendSuccess(res, { userId: user._id })
+		return sendSuccess(res, { userId: result.user._id })
 	} catch (err: unknown) {
 		logger.error({ err }, 'publishDraft error')
 		return sendError(res, (err as Error).message || String(err), 500)

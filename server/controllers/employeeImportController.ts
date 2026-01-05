@@ -4,6 +4,7 @@ import validation from '../utils/validation'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
 import User from '../models/User'
+import employeeService from '../services/employeeService'
 
 // --- Helpers ---
 
@@ -205,21 +206,34 @@ export const importCommit = async (req: Request, res: Response) => {
 		const { results } = await processRows(rows, mapping || {})
 
 		// Filter only valid rows
-		const validUsers = results
-			.filter((r) => r.errors.length === 0)
-			.map((r) => r.finalUser)
+		const validRows = results.filter((r) => r.errors.length === 0)
 
-		if (validUsers.length === 0) {
+		if (validRows.length === 0) {
 			return sendError(res, 'No valid rows found to import', 400)
 		}
 
-		// Bulk Insert
-		// ordered: false ensures that one failure (e.g. race condition) doesn't stop the rest
-		const insertResult = await User.insertMany(validUsers, { ordered: false })
+		// Create users one-by-one via employeeService to ensure profile creation and auditing.
+		let imported = 0
+		let failed = 0
+		for (const r of validRows) {
+			const dto = r.finalUser
+			try {
+				// pass audit user id if available
+				const auditUser = (req.user as any)?._id
+				await employeeService.createUserAndProfile(dto, auditUser)
+				imported++
+			} catch (e) {
+				failed++
+				logger.warn(
+					{ err: e, row: dto },
+					'Import commit: row failed (continued)'
+				)
+			}
+		}
 
 		return sendSuccess(res, {
-			imported: insertResult.length,
-			failed: results.length - insertResult.length,
+			imported,
+			failed,
 			total: results.length,
 		})
 	} catch (err: unknown) {
