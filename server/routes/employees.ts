@@ -54,6 +54,18 @@ router.post(
 	requirePermission('manageEmployees'),
 	body('name').isString().notEmpty().withMessage('name is required'),
 	body('email').isEmail().withMessage('valid email is required'),
+	// profile validations
+	body('profile.department')
+		.optional()
+		.isMongoId()
+		.withMessage('invalid department id'),
+	body('profile.salary')
+		.optional()
+		.custom((v) => {
+			if (v == null || String(v).trim() === '') return true
+			return !Number.isNaN(Number(v))
+		})
+		.withMessage('profile.salary must be a number'),
 	body('password')
 		.isLength({ min: 6 })
 		.withMessage('password must be at least 6 characters'),
@@ -130,6 +142,18 @@ router.put(
 	body('email').optional().isEmail(),
 	body('password').optional().isLength({ min: 6 }),
 	body('role').optional().isIn(['admin', 'hr', 'employee']),
+	// profile validations on update
+	body('profile.department')
+		.optional()
+		.isMongoId()
+		.withMessage('invalid department id'),
+	body('profile.salary')
+		.optional()
+		.custom((v) => {
+			if (v == null || String(v).trim() === '') return true
+			return !Number.isNaN(Number(v))
+		})
+		.withMessage('profile.salary must be a number'),
 	validationHandler,
 	updateEmployee
 )

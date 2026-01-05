@@ -59,11 +59,18 @@ const getEmployee = async (req: Request, res: Response) => {
 
 const createEmployee = async (req: Request, res: Response) => {
 	try {
-		const { name, email, password, role, profile } = req.body
+		const { name, email, password, role, profile } = req.body;
 		const existing = await User.findOne({ email })
 		if (existing) return sendError(res, 'Email already in use', 409)
 		const hashed = await bcrypt.hash(password, 10)
-		const created = await User.create({
+		// coerce profile.salary to number when provided
+		const safeProfile = profile && typeof profile === 'object' ? { ...profile } : undefined
+		if (safeProfile && safeProfile.salary != null && String(safeProfile.salary).trim() !== '') {
+			const n = Number(safeProfile.salary)
+			if (!Number.isNaN(n)) safeProfile.salary = n
+			else delete safeProfile.salary
+		}
+		const created = await User.create({ name, email, password: hashed, role: role || 'employee', profile: safeProfile });
 			name,
 			email,
 			password: hashed,
@@ -101,7 +108,18 @@ const updateEmployee = async (req: Request, res: Response) => {
 			const hashed = await bcrypt.hash(p, 10)
 			;(updates as Partial<IUser>).password = hashed
 		}
-		const updated = await User.findByIdAndUpdate(id, updates, {
+		// coerce profile.salary when present in updates
+		if ((updates as any).profile && typeof (updates as any).profile === 'object') {
+			const prof = (updates as any).profile
+			if (prof.salary != null && String(prof.salary).trim() !== '') {
+				const n = Number(prof.salary)
+				if (!Number.isNaN(n)) prof.salary = n
+				else delete prof.salary
+			}
+			(updates as any).profile = prof
+		}
+
+		const updated = await User.findByIdAndUpdate(id, updates, { new: true }).select('-password');
 			new: true,
 		}).select('-password')
 		if (!updated) return sendError(res, 'Employee not found', 404)
