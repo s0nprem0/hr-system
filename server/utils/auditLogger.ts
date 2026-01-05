@@ -1,5 +1,6 @@
 import AuditLog, { IAuditLog } from '../models/AuditLog'
 import logger from '../logger'
+import crypto from 'crypto'
 
 type AuditEntry = Partial<
 	Pick<
@@ -124,7 +125,34 @@ export default async function safeAuditLog(entry: AuditEntry) {
 		const redactedAfter = entry.after ? redactValue(entry.after) : undefined
 
 		// compute structured changes
-		const changes = structuredDiff(redactedBefore, redactedAfter)
+		let changes = structuredDiff(redactedBefore, redactedAfter)
+
+		// Special handling for draft-like documents to avoid storing PII or large blobs.
+		// For `employeeDrafts` we store a minimal summary (keys + short hash) and do
+		// not include actual before/after values in the audit record.
+		let summaryAfter: unknown | undefined = undefined
+		if (entry.collectionName === 'employeeDrafts') {
+			try {
+				const keys = isObject(redactedAfter)
+					? Object.keys(redactedAfter as Record<string, unknown>)
+					: []
+				const hash = crypto
+					.createHash('sha256')
+					.update(JSON.stringify(redactedAfter || ''))
+					.digest('hex')
+					.slice(0, 16)
+				summaryAfter = { keys, redacted: true, hash }
+				// represent changes as paths only (no before/after values)
+				changes = keys.map((k) => ({
+					path: k,
+					before: undefined,
+					after: undefined,
+				}))
+			} catch {
+				summaryAfter = { redacted: true }
+				changes = []
+			}
+		}
 
 		// build a concise human message if not provided
 		let message = entry.message
@@ -161,6 +189,13 @@ export default async function safeAuditLog(entry: AuditEntry) {
 		let storeAfter = redactedAfter
 		if (sizeOf(storeBefore) > MAX_PAYLOAD_BYTES) storeBefore = undefined
 		if (sizeOf(storeAfter) > MAX_PAYLOAD_BYTES) storeAfter = undefined
+
+		// If we created a summary for drafts, use that instead of raw after
+		if (entry.collectionName === 'employeeDrafts' && summaryAfter) {
+			storeAfter = summaryAfter
+			// ensure we don't leak before values for drafts
+			storeBefore = undefined
+		}
 
 		await AuditLog.create({
 			collectionName: entry.collectionName,

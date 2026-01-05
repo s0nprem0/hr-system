@@ -29,7 +29,13 @@ const auditSchema: Schema = new Schema({
 })
 
 // Indexes for common queries to improve read performance
-auditSchema.index({ createdAt: -1 })
+// TTL index: automatically remove old audit entries. Default retention: 90 days.
+const ttlSeconds = Number(
+	process.env.AUDIT_LOG_TTL_SECONDS || 60 * 60 * 24 * 90
+)
+auditSchema.index({ createdAt: 1 }, { expireAfterSeconds: ttlSeconds })
+
+// Other useful indexes for queries
 auditSchema.index({ collectionName: 1, documentId: 1 })
 auditSchema.index({ collectionName: 1, createdAt: -1 })
 auditSchema.index({ user: 1 })
