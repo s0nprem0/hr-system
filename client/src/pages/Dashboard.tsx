@@ -15,7 +15,11 @@ import MetricCard from '../components/ui/MetricCard'
 import ApprovalList from '../components/ui/ApprovalList'
 import Skeleton from '../components/ui/Skeleton'
 import { useEffect, useState } from 'react'
+import { apiGetJson, apiPostJson } from '../lib/api'
 import { useToast } from '../context/ToastContext'
+
+type Metric = { id: string; title: string; value: number }
+type Approval = { id: string; title: string; subtitle?: string }
 
 const Dashboard = () => {
 	const auth = useAuth()
@@ -48,12 +52,13 @@ const Dashboard = () => {
 		const fetchMetrics = async () => {
 			setMetricsLoading(true)
 			try {
-				const res = await fetch('/api/metrics')
-				if (!res.ok) throw new Error('Failed to fetch metrics')
-				const data = await res.json()
+				const data = await apiGetJson<{ metrics?: Metric[] }>('/api/metrics')
 				if (!mounted) return
 				// Expecting data.metrics or raw array
-				setMetricsData(data.metrics ?? data)
+				setMetricsData(
+					(data as { metrics?: Metric[] }).metrics ??
+						(data as unknown as Metric[])
+				)
 			} catch (err) {
 				console.error(err)
 			} finally {
@@ -72,11 +77,12 @@ const Dashboard = () => {
 		const fetchApprovals = async () => {
 			setApprovalsLoading(true)
 			try {
-				const res = await fetch('/api/approvals')
-				if (!res.ok) throw new Error('Failed to fetch approvals')
-				const data = await res.json()
+				const data = await apiGetJson<{ items?: Approval[] }>('/api/approvals')
 				if (!mounted) return
-				setApprovals(data.items ?? data)
+				setApprovals(
+					(data as { items?: Approval[] }).items ??
+						(data as unknown as Approval[])
+				)
 			} catch (err) {
 				console.error(err)
 			} finally {
@@ -96,13 +102,7 @@ const Dashboard = () => {
 		const prev = approvals
 		setApprovals((s) => s.filter((a) => a.id !== id))
 		try {
-			const res = await fetch(`/api/approvals/${id}/approve`, {
-				method: 'POST',
-			})
-			if (!res.ok) {
-				const text = await res.text()
-				throw new Error(text || 'Approve failed')
-			}
+			await apiPostJson(`/api/approvals/${id}/approve`)
 			toast.showToast('Approval successful', 'success')
 		} catch (err: unknown) {
 			console.error(err)
@@ -116,11 +116,7 @@ const Dashboard = () => {
 		const prev = approvals
 		setApprovals((s) => s.filter((a) => a.id !== id))
 		try {
-			const res = await fetch(`/api/approvals/${id}/deny`, { method: 'POST' })
-			if (!res.ok) {
-				const text = await res.text()
-				throw new Error(text || 'Deny failed')
-			}
+			await apiPostJson(`/api/approvals/${id}/deny`)
 			toast.showToast('Denied successfully', 'success')
 		} catch (err: unknown) {
 			console.error(err)
