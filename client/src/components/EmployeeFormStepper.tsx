@@ -27,6 +27,7 @@ export default function EmployeeFormStepper() {
 			return {}
 		}
 	})
+	const [savedAt, setSavedAt] = useState<string | null>(null)
 
 	// validation state
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({})
@@ -40,7 +41,8 @@ export default function EmployeeFormStepper() {
 			.then((res: AxiosResponse) => {
 				if (!mounted) return
 				if (res?.data?.success) {
-					setDraft(res.data.data || {})
+					// merge server draft into local draft but keep local edits
+					setDraft((prev) => ({ ...(res.data.data || {}), ...prev }))
 				}
 			})
 			.catch(() => undefined)
@@ -52,19 +54,68 @@ export default function EmployeeFormStepper() {
 		const id = setTimeout(() => {
 			try {
 				localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+				setSavedAt(new Date().toISOString())
 			} catch (err) {
 				console.warn('Failed to save draft', err)
 			}
 
-			// also persist draft to server (fire-and-forget)
-			api.post('/api/employees/draft', draft).catch(() => undefined)
+			// also persist draft to server (fire-and-forget) and update savedAt on success
+			api
+				.post('/api/employees/draft', draft)
+				.then(() => setSavedAt(new Date().toISOString()))
+				.catch(() => undefined)
 		}, 500)
 
 		return () => clearTimeout(id)
 	}, [draft])
 
+	const validateField = (key: keyof EmployeeDraft, value: unknown) => {
+		switch (key) {
+			case 'firstName':
+				if (!value || !String(value).trim()) return 'First name is required'
+				return ''
+			case 'lastName':
+				if (!value || !String(value).trim()) return 'Last name is required'
+				return ''
+			case 'email': {
+				const emailRegex = /^\S+@\S+\.\S+$/
+				if (!value || !emailRegex.test(String(value)))
+					return 'Valid email is required'
+				return ''
+			}
+			case 'salary':
+				if (value != null && String(value).length > 0 && isNaN(Number(value)))
+					return 'Salary must be a number'
+				return ''
+			default:
+				return ''
+		}
+	}
+
 	const update = (patch: Partial<EmployeeDraft>) =>
-		setDraft((d) => ({ ...d, ...patch }))
+		setDraft((d) => {
+			const next = { ...d, ...patch }
+			// validate patched fields
+			setFormErrors((errs) => {
+				const copy: Record<string, string> = { ...errs }
+				const keys = Object.keys(patch) as (keyof EmployeeDraft)[]
+				keys.forEach((k) => {
+					const v = (patch as Record<string, unknown>)[k as string]
+					const err = validateField(k, v)
+					if (err) copy[k as string] = err
+					else delete copy[k as string]
+				})
+				return copy
+			})
+			return next
+		})
+
+	const hasErrorsForStep = (s: number) => {
+		if (s === 0)
+			return !!(formErrors.firstName || formErrors.lastName || formErrors.email)
+		if (s === 2) return !!formErrors.salary
+		return false
+	}
 
 	const validateStep = (s: number) => {
 		const errs: Record<string, string> = {}
@@ -231,7 +282,15 @@ export default function EmployeeFormStepper() {
 								i === step ? 'bg-blue-600 text-white' : 'bg-gray-100'
 							}`}
 						>
-							{s}
+							<span className="inline-flex items-center gap-2">
+								{s}
+								{hasErrorsForStep(i) && (
+									<span
+										className="ml-2 inline-block w-2 h-2 bg-red-600 rounded-full"
+										aria-hidden="true"
+									/>
+								)}
+							</span>
 						</button>
 					))}
 				</nav>
@@ -248,6 +307,11 @@ export default function EmployeeFormStepper() {
 								onChange={(e) => update({ firstName: e.target.value })}
 								className="w-full border rounded p-(--space-2)"
 							/>
+							{formErrors.firstName && (
+								<div className="text-sm text-red-600">
+									{formErrors.firstName}
+								</div>
+							)}
 							<input
 								placeholder="Last name"
 								aria-label="Last name"
@@ -256,6 +320,11 @@ export default function EmployeeFormStepper() {
 								onChange={(e) => update({ lastName: e.target.value })}
 								className="w-full border rounded p-(--space-2)"
 							/>
+							{formErrors.lastName && (
+								<div className="text-sm text-red-600">
+									{formErrors.lastName}
+								</div>
+							)}
 							<input
 								type="email"
 								placeholder="Email"
@@ -265,6 +334,9 @@ export default function EmployeeFormStepper() {
 								onChange={(e) => update({ email: e.target.value })}
 								className="w-full border rounded p-(--space-2)"
 							/>
+							{formErrors.email && (
+								<div className="text-sm text-red-600">{formErrors.email}</div>
+							)}
 						</div>
 					)}
 
@@ -297,6 +369,9 @@ export default function EmployeeFormStepper() {
 								onChange={(e) => update({ salary: e.target.value })}
 								className="w-full border rounded p-2"
 							/>
+							{formErrors.salary && (
+								<div className="text-sm text-red-600">{formErrors.salary}</div>
+							)}
 							<p className="text-sm text-gray-600">
 								Comp changes require approval.
 							</p>
@@ -341,9 +416,14 @@ export default function EmployeeFormStepper() {
 					)}
 
 					<button
-						onClick={() =>
-							localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-						}
+						onClick={() => {
+							try {
+								localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+								setSavedAt(new Date().toISOString())
+							} catch {
+								/* ignore */
+							}
+						}}
 						disabled={saving}
 						className={`ml-auto px-(--space-3) py-(--space-2) bg-yellow-100 rounded ${
 							saving ? 'opacity-50 cursor-not-allowed' : ''
@@ -351,6 +431,11 @@ export default function EmployeeFormStepper() {
 					>
 						Save draft
 					</button>
+					{savedAt && (
+						<div className="text-sm text-gray-500 ml-2">
+							Saved {new Date(savedAt).toLocaleTimeString()}
+						</div>
+					)}
 
 					<button
 						onClick={clearDraft}
