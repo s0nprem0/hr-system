@@ -20,7 +20,7 @@ export const CreateEmployeeSchema = z.object({
 
 export const ImportCommitSchema = z.object({
 	csv: z.string().min(1),
-	mapping: z.record(z.string()).optional(),
+	mapping: z.record(z.string(), z.string()).optional(),
 })
 
 export const PublishDraftSchema = z.object({

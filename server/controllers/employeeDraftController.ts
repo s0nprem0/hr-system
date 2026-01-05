@@ -105,7 +105,7 @@ const publishDraft = async (req: Request, res: Response) => {
 		safeAuditLog({
 			collectionName: 'employeeDrafts',
 			documentId: result.user._id,
-			action: 'publish',
+			action: 'create',
 			user: auditUserId,
 			before: draft.data,
 			after: { user: result.user._id, profile: result.profile },

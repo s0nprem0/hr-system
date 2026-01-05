@@ -164,4 +164,97 @@ export async function publishDraft(
 	return createUserAndProfile(dto, auditUserId)
 }
 
-export default { createUserAndProfile, publishDraft }
+/**
+ * Update an existing user and their profile by user id.
+ * Applies allowed updates, hashes password when present, and upserts profile.
+ */
+export async function updateUserAndProfile(
+	userId: string | mongoose.Types.ObjectId,
+	updates: Record<string, any>,
+	auditUserId?: mongoose.Types.ObjectId | string | undefined
+) {
+	const session = await mongoose.startSession()
+	session.startTransaction()
+	try {
+		const id =
+			typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId
+
+		const user = (await User.findById(id).session(session)) as any | null
+		if (!user) throw new Error('User not found')
+
+		let changed = false
+		if (updates.name && user.name !== updates.name) {
+			user.name = updates.name
+			changed = true
+		}
+		if (updates.email && user.email !== updates.email) {
+			user.email = updates.email
+			changed = true
+		}
+		if (updates.role && user.role !== updates.role) {
+			user.role = updates.role as 'admin' | 'hr' | 'employee'
+			changed = true
+		}
+		if (updates.password) {
+			user.password = await bcrypt.hash(String(updates.password), 10)
+			changed = true
+		}
+		if (changed) await user.save({ session })
+
+		// Profile updates
+		const p = updates.profile || {}
+		const profileUpdates: Record<string, unknown> = {}
+		if (p.department) profileUpdates.department = p.department
+		if (p.designation) profileUpdates.jobTitle = p.designation
+		if (p.jobTitle) profileUpdates.jobTitle = p.jobTitle
+		if (p.status) profileUpdates.status = p.status
+		if (p.salary != null && String(p.salary).trim() !== '') {
+			const n = Number(p.salary)
+			if (!Number.isNaN(n)) profileUpdates.salary = n
+		}
+
+		const updatedProfile = (await EmployeeProfile.findOneAndUpdate(
+			{ user: id },
+			profileUpdates,
+			{ new: true, upsert: true, session }
+		)) as any | null
+
+		await session.commitTransaction()
+
+		// Audit
+		try {
+			const auditUserObj = auditUserId
+				? typeof auditUserId === 'string'
+					? new mongoose.Types.ObjectId(String(auditUserId))
+					: (auditUserId as mongoose.Types.ObjectId)
+				: undefined
+			await safeAuditLog({
+				collectionName: 'users',
+				documentId: user._id,
+				action: 'update',
+				user: auditUserObj,
+				before: undefined,
+				after: {
+					user: user.toObject ? user.toObject() : user,
+					profile: updatedProfile?.toObject
+						? updatedProfile.toObject()
+						: updatedProfile,
+				},
+			})
+		} catch (e) {
+			logger.warn(
+				{ err: e },
+				'employeeService.updateUserAndProfile: audit failed'
+			)
+		}
+
+		return { user, profile: updatedProfile }
+	} catch (err) {
+		await session.abortTransaction()
+		throw err
+	} finally {
+		session.endSession()
+	}
+}
+
+export default { createUserAndProfile, publishDraft, updateUserAndProfile }

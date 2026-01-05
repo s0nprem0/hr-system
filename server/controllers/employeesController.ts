@@ -154,6 +154,7 @@ const listEmployees = async (req: Request, res: Response) => {
 const getEmployee = async (req: Request, res: Response) => {
 	try {
 		const { id } = req.params
+		if (!id) return sendError(res, 'Employee id required', 400)
 
 		const user = await User.findById(id).select('-password').lean()
 		if (!user) return sendError(res, 'Employee not found', 404)
@@ -217,52 +218,10 @@ const createEmployee = async (req: Request, res: Response) => {
 }
 
 const updateEmployee = async (req: Request, res: Response) => {
-	const session = await mongoose.startSession()
-	session.startTransaction()
 	try {
 		const { id } = req.params
+		if (!id) return sendError(res, 'Employee id required', 400)
 		const updates = req.body
-
-		// 1. Update User fields
-		const userUpdates: Record<string, unknown> = {}
-		if (updates.name) userUpdates.name = updates.name
-		if (updates.email) userUpdates.email = updates.email
-		if (updates.role) userUpdates.role = updates.role
-		if (updates.password) {
-			userUpdates.password = await bcrypt.hash(String(updates.password), 10)
-		}
-
-		const updatedUser = await User.findByIdAndUpdate(id, userUpdates, {
-			new: true,
-			session,
-		}).select('-password')
-
-		if (!updatedUser) {
-			await session.abortTransaction()
-			return sendError(res, 'Employee not found', 404)
-		}
-
-		// 2. Update Profile fields
-		// Flatten incoming profile updates
-		const profileUpdates: Record<string, unknown> = {}
-		const p = updates.profile || {}
-
-		if (p.department) profileUpdates.department = p.department
-		if (p.designation) profileUpdates.jobTitle = p.designation // Map legacy
-		if (p.jobTitle) profileUpdates.jobTitle = p.jobTitle
-		if (p.status) profileUpdates.status = p.status
-		if (p.salary != null && String(p.salary).trim() !== '') {
-			const n = Number(p.salary)
-			if (!Number.isNaN(n)) profileUpdates.salary = n
-		}
-
-		const updatedProfile = await EmployeeProfile.findOneAndUpdate(
-			{ user: id },
-			profileUpdates,
-			{ new: true, upsert: true, session } // upsert creates profile if missing
-		)
-
-		await session.commitTransaction()
 
 		const authUser = req.user as AuthUser | undefined
 		const auditUserId = authUser?._id
@@ -271,23 +230,17 @@ const updateEmployee = async (req: Request, res: Response) => {
 				: (authUser._id as mongoose.Types.ObjectId)
 			: undefined
 
-		safeAuditLog({
-			collectionName: 'users',
-			action: 'update',
-			documentId: updatedUser._id,
-			user: auditUserId,
-			after: mergeUserProfile(updatedUser, updatedProfile),
-			message: `User updated by ${authUser?.email || 'system'}`,
-		}).catch(() => undefined)
+		const result = await employeeService.updateUserAndProfile(
+			id,
+			updates,
+			auditUserId
+		)
 
-		return sendSuccess(res, mergeUserProfile(updatedUser, updatedProfile))
+		return sendSuccess(res, mergeUserProfile(result.user, result.profile))
 	} catch (err: unknown) {
-		await session.abortTransaction()
 		const message = err instanceof Error ? err.message : String(err)
 		logger.error({ err }, 'updateEmployee error')
 		return sendError(res, message, 500)
-	} finally {
-		session.endSession()
 	}
 }
 

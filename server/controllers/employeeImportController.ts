@@ -206,7 +206,10 @@ export const importCommit = async (req: Request, res: Response) => {
 		const rows = parseCSV(csv)
 		if (!rows.length) return sendError(res, 'Empty CSV', 400)
 
-		const { results } = await processRows(rows, mapping || {})
+		const { results } = await processRows(
+			rows,
+			(mapping || {}) as Record<string, string>
+		)
 
 		// Filter only valid rows
 		const validRows = results.filter((r) => r.errors.length === 0)
