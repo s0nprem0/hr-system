@@ -5,6 +5,7 @@ import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
 import User from '../models/User'
 import employeeService from '../services/employeeService'
+import validators from '../validators/zodValidators'
 
 // --- Helpers ---
 
@@ -194,11 +195,13 @@ export const importDryRun = async (req: Request, res: Response) => {
 
 export const importCommit = async (req: Request, res: Response) => {
 	try {
-		const { csv, mapping } = req.body as {
-			csv?: string
-			mapping?: Record<string, string>
+		const parsed = validators.ImportCommitSchema.safeParse(req.body)
+		if (!parsed.success) {
+			const errors = validators.formatZodErrors(parsed.error)
+			return sendError(res, 'Validation failed', 400, { errors })
 		}
-		if (!csv) return sendError(res, 'CSV is required', 400)
+
+		const { csv, mapping } = parsed.data
 
 		const rows = parseCSV(csv)
 		if (!rows.length) return sendError(res, 'Empty CSV', 400)

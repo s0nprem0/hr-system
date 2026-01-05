@@ -7,6 +7,7 @@ import logger from '../logger'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import safeAuditLog from '../utils/auditLogger'
 import employeeService from '../services/employeeService'
+import validators from '../validators/zodValidators'
 
 // Define types locally or import them if available in your project types
 type AuthUser = {
@@ -171,7 +172,13 @@ const getEmployee = async (req: Request, res: Response) => {
 
 const createEmployee = async (req: Request, res: Response) => {
 	try {
-		const { name, email, password, role, profile } = req.body
+		const parsed = validators.CreateEmployeeSchema.safeParse(req.body)
+		if (!parsed.success) {
+			const errors = validators.formatZodErrors(parsed.error)
+			return sendError(res, 'Validation failed', 400, { errors })
+		}
+
+		const { name, email, password, role, profile } = parsed.data
 
 		// Preserve existing behavior: if an account exists with the email, return 409
 		const existing = await User.findOne({ email })
@@ -185,7 +192,7 @@ const createEmployee = async (req: Request, res: Response) => {
 			profile: {
 				designation: profile?.designation || profile?.jobTitle,
 				department: profile?.department,
-				salary: profile?.salary != null ? Number(profile.salary) : undefined,
+				salary: profile?.salary,
 			},
 		}
 

@@ -5,6 +5,7 @@ import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
 import safeAuditLog from '../utils/auditLogger'
 import validation from '../utils/validation'
+import validators from '../validators/zodValidators'
 
 const getDraft = async (req: Request, res: Response) => {
 	try {
@@ -86,19 +87,16 @@ const publishDraft = async (req: Request, res: Response) => {
 		if (!draft || !draft.data) return sendError(res, 'No draft found', 400)
 
 		const data = draft.data as Record<string, any>
-		if (!data.firstName || !data.lastName || !data.email) {
-			return sendError(
-				res,
-				'Draft missing required fields (firstName, lastName, email)',
-				400
-			)
+
+		// Validate draft payload with zod
+		const parsed = validators.PublishDraftSchema.safeParse(data)
+		if (!parsed.success) {
+			const errors = validators.formatZodErrors(parsed.error)
+			return sendError(res, 'Validation failed', 400, { errors })
 		}
 
-		if (!validation.isEmail(data.email))
-			return sendError(res, 'Invalid email', 400)
-
 		const auditUserId = new mongoose.Types.ObjectId(String(userId))
-		const result = await employeeService.publishDraft(data, auditUserId)
+		const result = await employeeService.publishDraft(parsed.data, auditUserId)
 
 		// clear draft after successful publish
 		await EmployeeDraft.deleteOne({ user: userId })
