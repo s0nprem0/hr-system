@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 import type { AxiosResponse } from 'axios'
+import { useToast } from '../context/ToastContext'
 
 type EmployeeDraft = {
 	firstName?: string
@@ -73,9 +75,63 @@ export default function EmployeeFormStepper() {
 	}
 
 	const submit = () => {
-		console.log('Submitting employee', draft)
-		clearDraft()
-		// swap this for a toast in real life
+		// client-side validation
+		if (!draft.firstName || !draft.lastName || !draft.email) {
+			toast.showToast('First name, last name and email are required', 'error')
+			return
+		}
+
+		setSaving(true)
+		const name = `${draft.firstName} ${draft.lastName}`.trim()
+		const password = generatePassword(12)
+		const payload = {
+			name,
+			email: draft.email,
+			password,
+			role: 'employee',
+			profile: { department: draft.department },
+			active: true,
+		}
+
+		api
+			.post('/api/employees', payload)
+			.then(async (res) => {
+				if (!res?.data?.success) {
+					toast.showToast(
+						res?.data?.error?.message || 'Failed to create employee',
+						'error'
+					)
+					return
+				}
+				const created = res.data.data
+				// clear drafts locally and server-side
+				try {
+					await api.post('/api/employees/draft', {})
+				} catch {}
+				localStorage.removeItem(DRAFT_KEY)
+				toast.showToast('Employee created', 'success')
+				navigate(`/employees/${created?._id || created?._id || ''}`)
+			})
+			.catch((err) => {
+				const msg =
+					err?.response?.data?.error?.message || err?.message || 'Create failed'
+				toast.showToast(String(msg), 'error')
+			})
+			.finally(() => setSaving(false))
+	}
+
+	// helpers
+	const navigate = useNavigate()
+	const toast = useToast()
+	const [saving, setSaving] = useState(false)
+
+	function generatePassword(len = 12) {
+		const chars =
+			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-='
+		let out = ''
+		for (let i = 0; i < len; i++)
+			out += chars.charAt(Math.floor(Math.random() * chars.length))
+		return out
 	}
 
 	return (
@@ -167,27 +223,42 @@ export default function EmployeeFormStepper() {
 				{step < steps.length - 1 ? (
 					<button
 						onClick={next}
-						className="px-3 py-2 bg-blue-600 text-white rounded"
+						disabled={saving}
+						className={`px-3 py-2 bg-blue-600 text-white rounded ${
+							saving ? 'opacity-50 cursor-not-allowed' : ''
+						}`}
 					>
 						Next
 					</button>
 				) : (
 					<button
 						onClick={submit}
-						className="px-3 py-2 bg-green-600 text-white rounded"
+						disabled={saving}
+						className={`px-3 py-2 bg-green-600 text-white rounded ${
+							saving ? 'opacity-50 cursor-not-allowed' : ''
+						}`}
 					>
-						Submit
+						{saving ? 'Saving…' : 'Submit'}
 					</button>
 				)}
 
 				<button
 					onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))}
-					className="ml-auto px-3 py-2 bg-yellow-100 rounded"
+					disabled={saving}
+					className={`ml-auto px-3 py-2 bg-yellow-100 rounded ${
+						saving ? 'opacity-50 cursor-not-allowed' : ''
+					}`}
 				>
 					Save draft
 				</button>
 
-				<button onClick={clearDraft} className="px-3 py-2 bg-red-100 rounded">
+				<button
+					onClick={clearDraft}
+					disabled={saving}
+					className={`px-3 py-2 bg-red-100 rounded ${
+						saving ? 'opacity-50 cursor-not-allowed' : ''
+					}`}
+				>
 					Clear draft
 				</button>
 			</div>
