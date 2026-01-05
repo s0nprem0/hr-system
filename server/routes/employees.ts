@@ -11,6 +11,7 @@ import {
 	updateEmployee,
 	deleteEmployee,
 } from '../controllers/employeesController'
+import { importDryRun } from '../controllers/employeeImportController'
 import { getDraft, saveDraft } from '../controllers/employeeDraftController'
 
 const router = express.Router()
@@ -130,6 +131,16 @@ router.post(
 		.withMessage('salary must be a number'),
 	validationHandler,
 	saveDraft
+)
+
+// CSV import (dry-run): accept CSV text and a mapping, return preview with errors
+router.post(
+	'/import',
+	verifyUser,
+	requirePermission('manageEmployees'),
+	body('csv').isString().withMessage('csv (string) is required'),
+	validationHandler,
+	importDryRun
 )
 
 // Update employee - admin/hr

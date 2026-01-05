@@ -3,6 +3,7 @@ import './index.css';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import EmployeesList from './pages/EmployeesList';
+import EmployeeImport from './pages/EmployeeImport';
 import EmployeeDetail from './pages/EmployeeDetail';
 import EmployeeForm from './pages/EmployeeForm';
 import Departments from './pages/Departments';
@@ -53,6 +54,14 @@ function App() {
               element={
                 <PrivateRoutes requiredRole={["admin", "hr"]}>
                   <EmployeesList />
+                </PrivateRoutes>
+              }
+            />
+            <Route
+              path="/employees/import"
+              element={
+                <PrivateRoutes requiredRole={["admin", "hr"]}>
+                  <EmployeeImport />
                 </PrivateRoutes>
               }
             />
