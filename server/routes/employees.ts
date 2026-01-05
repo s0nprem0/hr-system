@@ -11,7 +11,10 @@ import {
 	updateEmployee,
 	deleteEmployee,
 } from '../controllers/employeesController'
-import { importDryRun } from '../controllers/employeeImportController'
+import {
+	importDryRun,
+	importCommit,
+} from '../controllers/employeeImportController'
 import { getDraft, saveDraft } from '../controllers/employeeDraftController'
 
 const router = express.Router()
@@ -141,6 +144,16 @@ router.post(
 	body('csv').isString().withMessage('csv (string) is required'),
 	validationHandler,
 	importDryRun
+)
+
+// CSV import (commit): insert valid rows into DB
+router.post(
+	'/import/commit',
+	verifyUser,
+	requirePermission('manageEmployees'),
+	body('csv').isString().withMessage('csv (string) is required'),
+	validationHandler,
+	importCommit
 )
 
 // Update employee - admin/hr

@@ -5,7 +5,9 @@ import {
 	AlertCircle,
 	CheckCircle,
 	Loader2,
+	Save,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 
 // --- Types ---
@@ -18,6 +20,12 @@ interface PreviewRow {
 interface PreviewData {
 	header: string[]
 	preview: PreviewRow[]
+}
+
+interface ImportResult {
+	imported: number
+	failed: number
+	total: number
 }
 
 interface ApiErrorResponse {
@@ -67,11 +75,15 @@ const getErrorMessage = (err: unknown): string => {
 }
 
 export default function EmployeeImport() {
+	const navigate = useNavigate()
 	const [csvText, setCsvText] = useState('')
 	const [headers, setHeaders] = useState<string[]>([])
 	const [mapping, setMapping] = useState<Record<string, string>>({})
 	const [preview, setPreview] = useState<PreviewData | null>(null)
+	const [importResult, setImportResult] = useState<ImportResult | null>(null)
+
 	const [loading, setLoading] = useState(false)
+	const [isCommitting, setIsCommitting] = useState(false)
 	const [fileName, setFileName] = useState('')
 	const [error, setError] = useState<string | null>(null)
 
@@ -80,6 +92,7 @@ export default function EmployeeImport() {
 
 		// Reset state on new file
 		setPreview(null)
+		setImportResult(null)
 		setError(null)
 		setFileName(f.name)
 		setHeaders([])
@@ -121,6 +134,7 @@ export default function EmployeeImport() {
 		setLoading(true)
 		setError(null)
 		setPreview(null)
+		setImportResult(null)
 
 		try {
 			const resp = await api.post('/api/employees/import', {
@@ -135,6 +149,74 @@ export default function EmployeeImport() {
 			setLoading(false)
 		}
 	}
+
+	const runCommit = async () => {
+		if (!window.confirm('Are you sure you want to import the valid rows?'))
+			return
+
+		setIsCommitting(true)
+		setError(null)
+
+		try {
+			const resp = await api.post('/api/employees/import/commit', {
+				csv: csvText,
+				mapping,
+			})
+			setImportResult(resp.data.data)
+			setPreview(null)
+		} catch (err: unknown) {
+			setError(getErrorMessage(err))
+		} finally {
+			setIsCommitting(false)
+		}
+	}
+
+	// Success View
+	if (importResult) {
+		return (
+			<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-2xl mx-auto text-center mt-10">
+				<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+					<CheckCircle className="h-6 w-6 text-green-600" />
+				</div>
+				<h3 className="text-lg font-medium text-gray-900">Import Complete</h3>
+				<p className="mt-2 text-sm text-gray-500">
+					Successfully imported{' '}
+					<span className="font-bold text-gray-900">
+						{importResult.imported}
+					</span>{' '}
+					employees.
+					{importResult.failed > 0 && (
+						<span className="text-red-600 ml-1">
+							({importResult.failed} failed)
+						</span>
+					)}
+				</p>
+				<div className="mt-6 flex justify-center gap-3">
+					<button
+						onClick={() => {
+							setImportResult(null)
+							setCsvText('')
+							setHeaders([])
+							setFileName('')
+							setPreview(null)
+						}}
+						className="text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+					>
+						Import Another
+					</button>
+					<button
+						onClick={() => navigate('/employees')}
+						className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+					>
+						View Employees
+					</button>
+				</div>
+			</div>
+		)
+	}
+
+	const validCount =
+		preview?.preview.filter((r) => r.errors.length === 0).length || 0
 
 	return (
 		<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-4xl mx-auto">
@@ -219,17 +301,32 @@ export default function EmployeeImport() {
 						))}
 					</div>
 
-					<div className="mt-6">
+					<div className="mt-6 flex gap-3">
 						<button
-							className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+							className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							onClick={runDry}
-							disabled={loading || !csvText}
+							disabled={loading || isCommitting || !csvText}
 						>
 							{loading && (
 								<Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
 							)}
 							Validate & Preview
 						</button>
+
+						{preview && validCount > 0 && (
+							<button
+								className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+								onClick={runCommit}
+								disabled={isCommitting}
+							>
+								{isCommitting ? (
+									<Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+								) : (
+									<Save className="-ml-1 mr-2 h-4 w-4" />
+								)}
+								Import {validCount} Users
+							</button>
+						)}
 					</div>
 				</div>
 			)}
