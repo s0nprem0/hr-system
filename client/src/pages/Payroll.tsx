@@ -1,4 +1,5 @@
 import { useDataList } from '../utils/useDataList'
+import { useAuth } from '../context/AuthContext'
 import { PageHeader } from '../components/PageHeader'
 import { DataTable, type Column } from '../components/DataTable'
 import { MaskedValue } from '../components/ui'
@@ -35,6 +36,8 @@ const Payroll = () => {
 		deleteSuccessMessage: 'Payroll entry deleted',
 	})
 
+	const auth = useAuth()
+
 	const columns: Column<PayrollEntry>[] = [
 		{
 			key: 'employee',
@@ -53,6 +56,7 @@ const Payroll = () => {
 		{
 			key: 'gross',
 			header: 'Gross',
+			visible: auth?.can && auth.can('managePayroll'),
 			render: (entry) => (
 				<MaskedValue
 					value={entry.gross}
@@ -63,6 +67,7 @@ const Payroll = () => {
 		{
 			key: 'net',
 			header: 'Net',
+			visible: auth?.can && auth.can('managePayroll'),
 			render: (entry) => (
 				<MaskedValue
 					value={entry.net}
@@ -88,7 +93,8 @@ const Payroll = () => {
 		{
 			label: 'Delete',
 			onClick: (entry: PayrollEntry) => handleDelete(entry._id),
-			className: 'btn-danger',
+			className: 'text-danger',
+			condition: () => !!auth?.can && auth.can('managePayroll'),
 		},
 	]
 

@@ -15,6 +15,10 @@ export interface Column<T extends object = object> {
 	header: string
 	render?: (item: T) => ReactNode
 	className?: string
+	/**
+	 * Whether the column should be shown. Defaults to true.
+	 */
+	visible?: boolean
 }
 
 export interface Action<T extends object = object> {
@@ -46,8 +50,21 @@ export function DataTable<T extends object>({
 		)
 	}
 
+	const hiddenCols = columns.filter((c) => c.visible === false)
+
 	return (
 		<div className="overflow-x-auto">
+			{hiddenCols.length > 0 && (
+				<div className="mb-2 text-sm text-gray-600 flex items-center gap-2">
+					<span>Some columns are hidden due to permissions.</span>
+					<span
+						className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 cursor-help"
+						title={hiddenCols.map((c) => c.header).join(', ')}
+					>
+						View hidden: {hiddenCols.length}
+					</span>
+				</div>
+			)}
 			<table
 				className="w-full min-w-full table-auto"
 				role="table"
@@ -55,17 +72,19 @@ export function DataTable<T extends object>({
 			>
 				<thead className="bg-(--cp-surface) sticky top-0 z-10">
 					<tr>
-						{columns.map((col) => (
-							<th
-								key={String(col.key)}
-								scope="col"
-								className={`text-left p-3 text-sm font-medium ${
-									col.className || ''
-								}`}
-							>
-								{col.header}
-							</th>
-						))}
+						{columns
+							.filter((c) => c.visible !== false)
+							.map((col) => (
+								<th
+									key={String(col.key)}
+									scope="col"
+									className={`text-left p-3 text-sm font-medium ${
+										col.className || ''
+									}`}
+								>
+									{col.header}
+								</th>
+							))}
 						{actions.length > 0 && (
 							<th className="text-left p-3 text-sm font-medium">Actions</th>
 						)}
@@ -81,16 +100,18 @@ export function DataTable<T extends object>({
 								key={rowKey}
 								className="border-t hover:bg-[color-mix(in srgb, var(--cp-surface) 92%, var(--cp-bg) 8%)]"
 							>
-								{columns.map((col) => (
-									<td
-										key={String(col.key)}
-										className={`p-3 text-sm ${col.className || ''}`}
-									>
-										{col.render
-											? col.render(item)
-											: String(getCellValue(item, col.key) ?? '—')}
-									</td>
-								))}
+								{columns
+									.filter((c) => c.visible !== false)
+									.map((col) => (
+										<td
+											key={String(col.key)}
+											className={`p-3 text-sm ${col.className || ''}`}
+										>
+											{col.render
+												? col.render(item)
+												: String(getCellValue(item, col.key) ?? '—')}
+										</td>
+									))}
 
 								{actions.length > 0 && (
 									<td className="p-3">

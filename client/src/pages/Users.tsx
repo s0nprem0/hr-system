@@ -45,6 +45,7 @@ const Users = () => {
 		{
 			key: 'email',
 			header: 'Email',
+			visible: auth?.can && auth.can('manageUsers'),
 		},
 		{
 			key: 'role',

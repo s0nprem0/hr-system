@@ -47,6 +47,7 @@ const EmployeesList = () => {
 		{
 			key: 'email',
 			header: 'Email',
+			visible: auth?.can && auth.can('manageEmployees'),
 			render: (employee) => <MaskedValue value={employee.email} />,
 		},
 		{
