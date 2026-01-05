@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import api from '../utils/api'
+import type { AxiosResponse } from 'axios'
 
 type EmployeeDraft = {
 	firstName?: string
@@ -10,30 +12,47 @@ type EmployeeDraft = {
 }
 
 const DRAFT_KEY = 'employeeFormDraft'
+const steps = ['Basic', 'Work', 'Compensation', 'Documents'] as const
 
 export default function EmployeeFormStepper() {
 	const [step, setStep] = useState(0)
-	const steps = useMemo(
-		() => ['Basic', 'Work', 'Compensation', 'Documents'],
-		[]
-	)
-
 	const [draft, setDraft] = useState<EmployeeDraft>(() => {
 		try {
 			const raw = localStorage.getItem(DRAFT_KEY)
 			return raw ? (JSON.parse(raw) as EmployeeDraft) : {}
-		} catch (e) {
+		} catch {
 			return {}
 		}
 	})
 
-	// Autosave draft to localStorage
+	// load server-side draft on mount (if any) and merge/override local draft
+	useEffect(() => {
+		let mounted = true
+		api
+			.get('/api/employees/draft')
+			.then((res: AxiosResponse) => {
+				if (!mounted) return
+				if (res?.data?.success) {
+					setDraft(res.data.data || {})
+				}
+			})
+			.catch(() => undefined)
+		return () => {
+			mounted = false
+		}
+	}, [])
 	useEffect(() => {
 		const id = setTimeout(() => {
 			try {
 				localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-			} catch {}
+			} catch (err) {
+				console.warn('Failed to save draft', err)
+			}
+
+			// also persist draft to server (fire-and-forget)
+			api.post('/api/employees/draft', draft).catch(() => undefined)
 		}, 500)
+
 		return () => clearTimeout(id)
 	}, [draft])
 
@@ -41,130 +60,110 @@ export default function EmployeeFormStepper() {
 		setDraft((d) => ({ ...d, ...patch }))
 
 	const next = () => setStep((s) => Math.min(s + 1, steps.length - 1))
+
 	const back = () => setStep((s) => Math.max(s - 1, 0))
 
 	const clearDraft = () => {
 		setDraft({})
 		try {
 			localStorage.removeItem(DRAFT_KEY)
-		} catch {}
+		} catch (err) {
+			console.warn('Failed to clear draft', err)
+		}
 	}
 
 	const submit = () => {
-		// Placeholder: integrate real submit to API
-		// Keep UI responsive — show toast or navigate on success in real app
-		// eslint-disable-next-line no-console
 		console.log('Submitting employee', draft)
 		clearDraft()
-		alert('Submit placeholder: employee data logged to console')
+		// swap this for a toast in real life
 	}
 
 	return (
 		<div className="p-6 bg-white rounded shadow">
 			<h2 className="text-xl font-semibold mb-4">Add / Edit Employee</h2>
 
-			<div className="mb-4">
-				<nav className="flex gap-2">
-					{steps.map((s, i) => (
-						<button
-							key={s}
-							onClick={() => setStep(i)}
-							className={`px-3 py-1 rounded ${
-								i === step ? 'bg-blue-600 text-white' : 'bg-gray-100'
-							}`}
-						>
-							{s}
-						</button>
-					))}
-				</nav>
-			</div>
+			<nav className="mb-4 flex gap-2">
+				{steps.map((s, i) => (
+					<button
+						key={s}
+						onClick={() => setStep(i)}
+						className={`px-3 py-1 rounded ${
+							i === step ? 'bg-blue-600 text-white' : 'bg-gray-100'
+						}`}
+					>
+						{s}
+					</button>
+				))}
+			</nav>
 
 			<div className="min-h-50">
 				{step === 0 && (
 					<div className="space-y-3">
-						<label className="block">
-							<div className="text-sm">First name</div>
-							<input
-								value={draft.firstName ?? ''}
-								onChange={(e) => update({ firstName: e.target.value })}
-								className="mt-1 w-full border rounded p-2"
-							/>
-						</label>
-
-						<label className="block">
-							<div className="text-sm">Last name</div>
-							<input
-								value={draft.lastName ?? ''}
-								onChange={(e) => update({ lastName: e.target.value })}
-								className="mt-1 w-full border rounded p-2"
-							/>
-						</label>
-
-						<label className="block">
-							<div className="text-sm">Email</div>
-							<input
-								type="email"
-								value={draft.email ?? ''}
-								onChange={(e) => update({ email: e.target.value })}
-								className="mt-1 w-full border rounded p-2"
-							/>
-						</label>
+						<input
+							placeholder="First name"
+							value={draft.firstName ?? ''}
+							onChange={(e) => update({ firstName: e.target.value })}
+							className="w-full border rounded p-2"
+						/>
+						<input
+							placeholder="Last name"
+							value={draft.lastName ?? ''}
+							onChange={(e) => update({ lastName: e.target.value })}
+							className="w-full border rounded p-2"
+						/>
+						<input
+							type="email"
+							placeholder="Email"
+							value={draft.email ?? ''}
+							onChange={(e) => update({ email: e.target.value })}
+							className="w-full border rounded p-2"
+						/>
 					</div>
 				)}
 
 				{step === 1 && (
 					<div className="space-y-3">
-						<label className="block">
-							<div className="text-sm">Job title</div>
-							<input
-								value={draft.jobTitle ?? ''}
-								onChange={(e) => update({ jobTitle: e.target.value })}
-								className="mt-1 w-full border rounded p-2"
-							/>
-						</label>
-
-						<label className="block">
-							<div className="text-sm">Department</div>
-							<input
-								value={draft.department ?? ''}
-								onChange={(e) => update({ department: e.target.value })}
-								className="mt-1 w-full border rounded p-2"
-							/>
-						</label>
+						<input
+							placeholder="Job title"
+							value={draft.jobTitle ?? ''}
+							onChange={(e) => update({ jobTitle: e.target.value })}
+							className="w-full border rounded p-2"
+						/>
+						<input
+							placeholder="Department"
+							value={draft.department ?? ''}
+							onChange={(e) => update({ department: e.target.value })}
+							className="w-full border rounded p-2"
+						/>
 					</div>
 				)}
 
 				{step === 2 && (
 					<div className="space-y-3">
-						<label className="block">
-							<div className="text-sm">Salary</div>
-							<input
-								value={draft.salary ?? ''}
-								onChange={(e) => update({ salary: e.target.value })}
-								className="mt-1 w-full border rounded p-2"
-								placeholder="0.00"
-							/>
-						</label>
-						<div className="text-sm text-gray-600">
-							Changes to compensation will require approval.
-						</div>
+						<input
+							placeholder="0.00"
+							value={draft.salary ?? ''}
+							onChange={(e) => update({ salary: e.target.value })}
+							className="w-full border rounded p-2"
+						/>
+						<p className="text-sm text-gray-600">
+							Comp changes require approval.
+						</p>
 					</div>
 				)}
 
 				{step === 3 && (
-					<div className="space-y-3">
-						<div className="text-sm">Documents</div>
-						<div className="border-dashed border-2 border-gray-200 p-6 rounded text-center">
-							Upload files (placeholder)
-						</div>
+					<div className="border-2 border-dashed border-gray-200 p-6 rounded text-center">
+						Upload files (placeholder)
 					</div>
 				)}
 			</div>
 
-			<div className="mt-6 flex items-center gap-3">
+			<div className="mt-6 flex gap-3 items-center">
 				<button onClick={back} className="px-3 py-2 bg-gray-100 rounded">
 					Back
 				</button>
+
 				{step < steps.length - 1 ? (
 					<button
 						onClick={next}
@@ -182,14 +181,12 @@ export default function EmployeeFormStepper() {
 				)}
 
 				<button
-					onClick={() => {
-						localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-						alert('Draft saved')
-					}}
+					onClick={() => localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))}
 					className="ml-auto px-3 py-2 bg-yellow-100 rounded"
 				>
 					Save draft
 				</button>
+
 				<button onClick={clearDraft} className="px-3 py-2 bg-red-100 rounded">
 					Clear draft
 				</button>
