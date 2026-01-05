@@ -9,6 +9,13 @@ What I changed (planned/recorded tasks)
 1. Documentation: created this document with explicit, actionable cleanup tasks.
 2. Tracked progress in the workspace TODO list (marked report done, audit started).
 
+Implemented (quick wins)
+
+- `ALLOW_SEED` gating already present in `server/userSeed.ts` (explicit allow required).
+- API response helpers exist in `server/utils/apiResponse.ts` (`sendSuccess` / `sendError`).
+- Payroll/employee lists use `MaskedValue` to hide sensitive fields; reveal is audited.
+- Improved `Resume` behavior in `client/src/components/EmployeeFormStepper.tsx` to focus the first field and switch to the first step.
+
 Short actionable code tasks (prioritized)
 
 1. Gate dev/seed scripts and prototype-only endpoints

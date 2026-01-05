@@ -166,7 +166,9 @@ export default function EmployeeFormStepper() {
 	const hasDraft = Object.keys(draft || {}).length > 0
 
 	const resumeDraft = () => {
-		firstNameRef.current?.focus()
+		// bring user to the first step and focus the first field
+		setStep(0)
+		setTimeout(() => firstNameRef.current?.focus(), 50)
 		toast.showToast('Draft restored', 'info')
 	}
 
