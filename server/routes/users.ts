@@ -66,7 +66,6 @@ router.delete(
 		try {
 			const { id } = req.params
 			if (!id) return sendError(res, 'User id required', 400)
-			if (!id) return sendError(res, 'User id required', 400)
 
 			const authUser = req.user
 			const auditUserId = authUser?._id

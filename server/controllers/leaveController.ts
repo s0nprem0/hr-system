@@ -13,10 +13,27 @@ const createLeave = async (req: Request, res: Response) => {
 		if (!startDate || !endDate)
 			return sendError(res, 'startDate and endDate are required', 400)
 
+		const s = new Date(startDate)
+		const e = new Date(endDate)
+		if (isNaN(s.getTime()) || isNaN(e.getTime()))
+			return sendError(res, 'Invalid date format for startDate or endDate', 400)
+		if (e < s)
+			return sendError(res, 'endDate must be same or after startDate', 400)
+
+		// Prevent absurdly long requests (safety limit: 365 days)
+		const maxMs = 365 * 24 * 60 * 60 * 1000
+		if (e.getTime() - s.getTime() > maxMs)
+			return sendError(
+				res,
+				'Leave duration exceeds maximum allowed length',
+				400
+			)
+
 		const created = await LeaveRequest.create({
 			user: userId,
-			startDate: new Date(startDate),
-			endDate: new Date(endDate),
+			startDate: s,
+			endDate: e,
+			status: 'pending',
 			type: (type as any) || 'vacation',
 			reason,
 		})

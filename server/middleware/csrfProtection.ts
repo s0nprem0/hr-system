@@ -7,6 +7,14 @@ export default function csrfProtection() {
 		.map((s) => s.trim())
 		.filter(Boolean)
 
+	// If no client origins configured, include a safe default used by the
+	// local development client. This prevents accidental rejection of same-origin
+	// requests during local runs where env vars may be absent.
+	if (allowedOrigins.length === 0) {
+		const fallback = process.env.CLIENT_URL || 'http://localhost:5173'
+		allowedOrigins.push(fallback)
+	}
+
 	return function (req: Request, res: Response, next: NextFunction) {
 		// Safe methods don't require CSRF checks
 		if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next()

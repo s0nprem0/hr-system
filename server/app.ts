@@ -61,6 +61,11 @@ export default function createApp() {
 		.map((s) => s.trim())
 		.filter(Boolean)
 
+	// If no origins configured, fall back to the `clientUrl` used above
+	if (allowedOrigins.length === 0 && clientUrl) {
+		allowedOrigins.push(clientUrl)
+	}
+
 	app.use(
 		cors({
 			origin: (origin, callback) => {
