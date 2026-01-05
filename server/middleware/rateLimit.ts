@@ -55,3 +55,16 @@ export const refreshRateLimiter = rateLimit({
 })
 
 export default loginRateLimiter
+
+// Rate limiter for frequent autosave/draft endpoints
+export const draftRateLimiter = rateLimit({
+	windowMs: 60 * 1000, // 1 minute
+	max: process.env.NODE_ENV === 'production' ? 30 : 2000,
+	skip: shouldSkipRateLimit,
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: {
+		success: false,
+		error: 'Too many requests to draft endpoint, please slow down.',
+	},
+})

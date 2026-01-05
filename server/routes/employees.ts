@@ -3,6 +3,7 @@ import { param, body, query } from 'express-validator'
 import verifyUser from '../middleware/authMiddleware'
 import requirePermission from '../middleware/requirePermission'
 import validationHandler from '../middleware/validationHandler'
+import { draftRateLimiter } from '../middleware/rateLimit'
 import {
 	listEmployees,
 	getEmployee,
@@ -68,8 +69,27 @@ router.post(
 router.get('/draft', verifyUser, requirePermission('manageEmployees'), getDraft)
 router.post(
 	'/draft',
+	draftRateLimiter,
 	verifyUser,
 	requirePermission('manageEmployees'),
+	// lightweight body-size guard: use Content-Length header when available
+	(req, res, next) => {
+		try {
+			const maxBytes = 8 * 1024 // 8 KB
+			const cl = req.headers['content-length']
+			if (cl) {
+				const n = Number(cl)
+				if (!Number.isNaN(n) && n > maxBytes) {
+					return res
+						.status(413)
+						.json({ success: false, error: 'Payload too large' })
+				}
+			}
+		} catch {
+			// ignore and proceed
+		}
+		return next()
+	},
 	// validate draft payload: only allow expected fields and types
 	body('firstName')
 		.optional()
