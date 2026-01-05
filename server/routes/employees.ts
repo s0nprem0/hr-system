@@ -2,6 +2,7 @@ import express from 'express'
 import { param, body, query } from 'express-validator'
 import verifyUser from '../middleware/authMiddleware'
 import requirePermission from '../middleware/requirePermission'
+import ownershipOrPermission from '../middleware/ownershipOrPermission'
 import validationHandler from '../middleware/validationHandler'
 import { draftRateLimiter } from '../middleware/rateLimit'
 import {
@@ -46,11 +47,11 @@ router.get(
 	listEmployees
 )
 
-// Get employee by id - admin and hr
+// Get employee by id - admin/hr or the owner themself
 router.get(
 	'/:id',
 	verifyUser,
-	requirePermission('manageEmployees'),
+	ownershipOrPermission('manageEmployees'),
 	param('id').isMongoId().withMessage('Invalid employee id'),
 	validationHandler,
 	getEmployee
@@ -175,11 +176,20 @@ router.post(
 	importCommit
 )
 
-// Update employee - admin/hr
+// Update employee - owner or admin/hr
 router.put(
 	'/:id',
 	verifyUser,
-	requirePermission('manageEmployees'),
+	ownershipOrPermission('manageEmployees'),
+	// Prevent role changes by owners; require manageEmployees permission to change role
+	(req, res, next) => {
+		try {
+			if (!req.body || typeof req.body.role === 'undefined') return next()
+			return requirePermission('manageEmployees')(req, res, next)
+		} catch (e) {
+			return next(e)
+		}
+	},
 	param('id').isMongoId().withMessage('Invalid employee id'),
 	body('name').optional().isString(),
 	body('email').optional().isEmail(),

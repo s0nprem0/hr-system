@@ -1,10 +1,10 @@
 import express from 'express'
-import mongoose from 'mongoose'
 import verifyUser from '../middleware/authMiddleware'
 import requirePermission from '../middleware/requirePermission'
+import ownershipOrPermission from '../middleware/ownershipOrPermission'
 import validationHandler from '../middleware/validationHandler'
 import { param, body } from 'express-validator'
-import type { Request, Response } from 'express'
+import type { Request, Response, NextFunction } from 'express'
 import User from '../models/User'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
@@ -76,11 +76,11 @@ router.delete(
 	}
 )
 
-// Get single user
+// Get single user - owner or admin/hr
 router.get(
 	'/:id',
 	verifyUser,
-	requirePermission('manageUsers'),
+	ownershipOrPermission('manageUsers'),
 	[param('id').isMongoId().withMessage('Invalid id')],
 	validationHandler,
 	async (req: Request, res: Response) => {
@@ -154,7 +154,16 @@ router.post(
 router.put(
 	'/:id',
 	verifyUser,
-	requirePermission('manageUsers'),
+	ownershipOrPermission('manageUsers'),
+	// Prevent role changes unless the caller has manageUsers
+	(req: Request, res: Response, next: NextFunction) => {
+		try {
+			if (!req.body || typeof req.body.role === 'undefined') return next()
+			return requirePermission('manageUsers')(req, res, next)
+		} catch (e) {
+			return next(e)
+		}
+	},
 	enforceContentLength(10240),
 	writeRateLimiter,
 	[
