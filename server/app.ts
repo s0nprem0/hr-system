@@ -13,6 +13,8 @@ import payrollRouter from './routes/payroll'
 import attendanceRouter from './routes/attendance'
 import leaveRouter from './routes/leave'
 import auditsRouter from './routes/audits'
+import metricsRouter from './routes/metrics'
+import approvalsRouter from './routes/approvals'
 import errorHandler from './middleware/errorHandler'
 
 export default function createApp() {
@@ -99,6 +101,12 @@ export default function createApp() {
 	app.use('/api/attendance', csrfProtection(), attendanceRouter)
 	app.use('/api/leave', csrfProtection(), leaveRouter)
 	app.use('/api/audits', csrfProtection(), auditsRouter)
+
+	// Lightweight development endpoints used by the client dashboard.
+	// These are intentionally mounted without CSRF middleware to simplify
+	// local development; in production implement CSRF + auth/permission checks.
+	app.use('/api/metrics', metricsRouter)
+	app.use('/api/approvals', approvalsRouter)
 
 	app.get('/health', (req, res) => {
 		const uptime = process.uptime()
