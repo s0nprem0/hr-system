@@ -34,7 +34,7 @@ export default async function () {
 			const indexes = await RefreshToken.collection.indexes()
 			logger.debug({ indexes }, 'jest.setup: refreshToken indexes')
 			for (const idx of indexes) {
-				if (idx.key && (idx.key as any).token === 1) {
+				if (idx.key && (idx.key as Record<string, number>)['token'] === 1) {
 					logger.warn({ index: idx.name }, 'jest.setup: dropping legacy index')
 					if (idx.name) {
 						await RefreshToken.collection.dropIndex(idx.name)

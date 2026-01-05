@@ -60,7 +60,8 @@ const ALLOWED_FIELDS = [
 
 // Shared validation and mapping logic
 async function processRows(rows: string[][], mapping: Record<string, string>) {
-	const header = rows[0].map((h) => String(h || '').trim())
+	if (!rows || rows.length === 0) throw new Error('No rows to process')
+	const header = rows[0]!.map((h) => String(h || '').trim())
 	const dataRows = rows.slice(1)
 
 	// Pre-calculate column indices
@@ -76,16 +77,25 @@ async function processRows(rows: string[][], mapping: Record<string, string>) {
 	const existingEmails = new Set<string>()
 
 	if (emailIdx !== -1) {
-		const emailsToCheck = dataRows
-			.map((r) => r[emailIdx]?.trim())
-			.filter((e) => e && /\S+@\S+\.\S+/.test(e))
+		// Collect sanitized email strings only (no undefined)
+		const emailsToCheck: string[] = dataRows.reduce<string[]>((acc, r) => {
+			const raw = r[emailIdx]
+			const val =
+				typeof raw === 'string'
+					? raw.trim()
+					: raw == null
+					? ''
+					: String(raw).trim()
+			if (val && /\S+@\S+\.\S+/.test(val)) acc.push(val)
+			return acc
+		}, [])
 
 		if (emailsToCheck.length > 0) {
 			const foundUsers = await User.find(
 				{ email: { $in: emailsToCheck } },
 				{ email: 1 }
 			).lean()
-			foundUsers.forEach((u) => existingEmails.add(u.email))
+			foundUsers.forEach((u) => existingEmails.add(String(u.email)))
 		}
 	}
 

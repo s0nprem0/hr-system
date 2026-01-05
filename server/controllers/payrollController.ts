@@ -7,35 +7,45 @@ import safeAuditLog from '../utils/auditLogger'
 import mongoose from 'mongoose'
 
 type PayrollDoc = IPayroll | mongoose.Document | Record<string, unknown>
+type WithToObject = { toObject?: () => unknown }
+
+type AuthUser = { _id?: mongoose.Types.ObjectId }
 
 function toPayrollDTO(doc: PayrollDoc | null | undefined) {
 	if (!doc) return null
-	const obj =
-		doc && typeof (doc as any).toObject === 'function'
-			? (doc as any).toObject()
-			: { ...(doc as any) }
+	const maybe = doc as WithToObject
+	let obj: Record<string, any> = {}
+	if (maybe && typeof maybe.toObject === 'function') {
+		const res = maybe.toObject()
+		obj =
+			typeof res === 'object' && res !== null
+				? (res as Record<string, any>)
+				: {}
+	} else if (typeof doc === 'object' && doc !== null) {
+		obj = doc as Record<string, any>
+	}
+
+	const emp = (obj.employee as any) || undefined
 	return {
-		_id: String(obj._id),
+		_id: obj._id != null ? String(obj._id) : undefined,
 		employeeId:
-			obj.employee && obj.employee._id
-				? String(obj.employee._id)
-				: obj.employee
-				? String(obj.employee)
-				: undefined,
+			emp && emp._id ? String(emp._id) : emp ? String(emp) : undefined,
 		gross: typeof obj.gross === 'number' ? obj.gross : Number(obj.gross),
 		net: typeof obj.net === 'number' ? obj.net : Number(obj.net),
 		tax: obj.tax != null ? Number(obj.tax) : undefined,
 		periodStart: obj.periodStart
-			? new Date(obj.periodStart).toISOString()
+			? new Date(String(obj.periodStart)).toISOString()
 			: undefined,
 		periodEnd: obj.periodEnd
-			? new Date(obj.periodEnd).toISOString()
+			? new Date(String(obj.periodEnd)).toISOString()
 			: undefined,
-		payDate: obj.payDate ? new Date(obj.payDate).toISOString() : undefined,
+		payDate: obj.payDate
+			? new Date(String(obj.payDate)).toISOString()
+			: undefined,
 		createdAt: obj.createdAt
-			? new Date(obj.createdAt).toISOString()
+			? new Date(String(obj.createdAt)).toISOString()
 			: undefined,
-		employee: obj.employee && obj.employee._id ? obj.employee : undefined,
+		employee: emp && emp._id ? emp : undefined,
 	}
 }
 
@@ -47,7 +57,7 @@ const listPayroll = async (req: Request, res: Response) => {
 		const from = req.query.from as string | undefined
 		const to = req.query.to as string | undefined
 
-		const filter: Record<string, any> = {}
+		const filter: any = {}
 		if (employeeId && mongoose.isValidObjectId(employeeId))
 			filter.employee = employeeId
 		// support filtering by payDate or periodStart range (legacy clients may use payDate)
@@ -133,11 +143,12 @@ const createPayroll = async (req: Request, res: Response) => {
 		)
 
 		// audit log (non-blocking)
+		const authUser = req.user as AuthUser | undefined
 		await safeAuditLog({
 			collectionName: 'Payroll',
 			documentId: entry._id,
 			action: 'create',
-			user: req.user?._id,
+			user: authUser?._id,
 			before: null,
 			after: result,
 		})
@@ -183,11 +194,12 @@ const updatePayroll = async (req: Request, res: Response) => {
 		}).populate('employee', 'name email role profile')
 		if (!updated) return sendError(res, 'Payroll entry not found', 404)
 
+		const authUser = req.user as AuthUser | undefined
 		await safeAuditLog({
 			collectionName: 'Payroll',
 			documentId: id,
 			action: 'update',
-			user: req.user?._id,
+			user: authUser?._id,
 			before,
 			after: updated,
 		})
@@ -209,11 +221,12 @@ const deletePayroll = async (req: Request, res: Response) => {
 		)
 		if (!removed) return sendError(res, 'Payroll entry not found', 404)
 
+		const authUser = req.user as AuthUser | undefined
 		await safeAuditLog({
 			collectionName: 'Payroll',
 			documentId: id,
 			action: 'delete',
-			user: req.user?._id,
+			user: authUser?._id,
 			before: removed,
 			after: null,
 		})

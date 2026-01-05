@@ -17,12 +17,22 @@ function getJwtSign(): (
 	secret: Secret,
 	options?: unknown
 ) => string {
-	const mod: any = jwt as any
-	if (typeof mod.sign === 'function') return mod.sign.bind(mod)
-	if (typeof mod === 'function') return mod.bind(mod)
-	if (mod && typeof mod.default === 'function') return mod.default.bind(mod)
-	if (mod && mod.default && typeof mod.default.sign === 'function')
-		return mod.default.sign.bind(mod.default)
+	type JwtModule = { sign?: Function; default?: unknown }
+	const mod = jwt as unknown as JwtModule
+	if (mod && typeof mod.sign === 'function')
+		return (mod.sign as Function).bind(mod)
+	if (typeof jwt === 'function') return (jwt as unknown as Function).bind(jwt)
+	const modDefault = (mod as { default?: unknown }).default as unknown
+	if (
+		mod &&
+		mod.default &&
+		typeof (modDefault as { sign?: Function }).sign === 'function'
+	)
+		return ((modDefault as { sign: Function }).sign as Function).bind(
+			mod.default
+		)
+	if (mod && typeof modDefault === 'function')
+		return (modDefault as Function).bind(mod)
 	throw new Error('jsonwebtoken.sign is not available')
 }
 
@@ -79,12 +89,13 @@ const login = async (req: Request, res: Response) => {
 				const indexes = await RefreshToken.collection.indexes()
 				logger.debug({ indexes }, 'authController.login: refreshToken indexes')
 				for (const idx of indexes) {
-					if (idx.key && (idx.key as any).token === 1) {
+					if (idx.key && (idx.key as Record<string, number>)['token'] === 1) {
 						logger.warn(
 							{ index: idx.name },
 							'authController.login: dropping legacy index'
 						)
-						await RefreshToken.collection.dropIndex(idx.name)
+						if (idx.name)
+							await RefreshToken.collection.dropIndex(String(idx.name))
 					}
 				}
 			}

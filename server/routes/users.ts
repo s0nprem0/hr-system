@@ -1,4 +1,5 @@
 import express from 'express'
+import mongoose from 'mongoose'
 import verifyUser from '../middleware/authMiddleware'
 import requirePermission from '../middleware/requirePermission'
 import validationHandler from '../middleware/validationHandler'

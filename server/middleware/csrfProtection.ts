@@ -13,9 +13,8 @@ export default function csrfProtection() {
 
 		// Double-submit: prefer explicit header+cookie match
 		const csrfHeader = (req.headers['x-csrf-token'] || '') as string
-		const csrfCookie = (req.cookies && (req.cookies as any).csrfToken) as
-			| string
-			| undefined
+		const cookies = req.cookies as Record<string, unknown> | undefined
+		const csrfCookie = (cookies?.csrfToken as string | undefined) || undefined
 		if (csrfHeader && csrfCookie && csrfHeader === csrfCookie) return next()
 
 		// Fallback: verify Origin or Referer matches configured client origins

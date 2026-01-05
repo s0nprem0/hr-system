@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express'
+import mongoose from 'mongoose'
 import AuditLog from '../models/AuditLog'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import safeAuditLog from '../utils/auditLogger'
@@ -17,37 +18,40 @@ export async function listAuditLogs(req: Request, res: Response) {
 		if (req.query.user) filter.user = req.query.user
 
 		if (req.query.from || req.query.to) {
-			filter.createdAt = {} as Record<string, unknown>
+			const createdAtFilter: Record<string, unknown> = {}
 			if (req.query.from)
-				(filter.createdAt as any).$gte = new Date(String(req.query.from))
-			if (req.query.to)
-				(filter.createdAt as any).$lte = new Date(String(req.query.to))
+				createdAtFilter.$gte = new Date(String(req.query.from))
+			if (req.query.to) createdAtFilter.$lte = new Date(String(req.query.to))
+			filter.createdAt = createdAtFilter as unknown as Record<string, unknown>
 		}
 
-		const [itemsRaw, total] = await Promise.all([
-			AuditLog.find(filter as any)
-				.sort({ createdAt: -1 })
-				.skip(skip)
-				.limit(limit)
-				.populate('user', 'name email')
-				.lean()
-				.exec(),
-			AuditLog.countDocuments(filter as any),
-		])
+		const itemsRaw = await AuditLog.find(filter)
+			.sort({ createdAt: -1 })
+			.skip(skip)
+			.limit(limit)
+			.populate('user', 'name email')
+			.lean()
+			.exec()
+		const total = await AuditLog.countDocuments(filter)
 
-		const items = (itemsRaw as any[]).map((it) => ({
-			_id: String(it._id),
-			collectionName: it.collectionName,
-			documentId: it.documentId,
-			action: it.action,
-			message: it.message,
-			user: it.user
-				? { _id: it.user._id, name: it.user.name, email: it.user.email }
-				: null,
-			createdAt: it.createdAt ? new Date(it.createdAt).toISOString() : null,
-			before: it.before,
-			after: it.after,
-		}))
+		const items = (itemsRaw as any[]).map((it) => {
+			const userObj = (it.user as any) || undefined
+			return {
+				_id: String(it._id),
+				collectionName: it.collectionName,
+				documentId: it.documentId,
+				action: it.action,
+				message: it.message,
+				user: userObj
+					? { _id: userObj._id, name: userObj.name, email: userObj.email }
+					: null,
+				createdAt: it.createdAt
+					? new Date(String(it.createdAt)).toISOString()
+					: null,
+				before: it.before,
+				after: it.after,
+			}
+		})
 
 		return sendSuccess(res, { items, total, page, limit })
 	} catch (err: unknown) {
@@ -69,11 +73,10 @@ export async function getAuditLog(req: Request, res: Response) {
 			action: entry.action,
 			message: entry.message,
 			user: entry.user
-				? {
-						_id: (entry.user as any)._id,
-						name: (entry.user as any).name,
-						email: (entry.user as any).email,
-				  }
+				? (() => {
+						const u = entry.user as any
+						return { _id: u._id, name: u.name, email: u.email }
+				  })()
 				: null,
 			createdAt: entry.createdAt
 				? new Date(entry.createdAt).toISOString()
@@ -90,17 +93,36 @@ export async function getAuditLog(req: Request, res: Response) {
 export async function logAuditEvent(req: Request, res: Response) {
 	try {
 		const { collectionName, documentId, message } = req.body as {
-			collectionName?: string
-			documentId?: unknown
-			message?: string
+				collectionName?: string
+				documentId?: unknown
+				message?: string
+		}
+		let auditDocumentId: string | mongoose.Types.ObjectId | undefined
+		if (typeof documentId === 'string') {
+			auditDocumentId = documentId
+		} else if (documentId instanceof mongoose.Types.ObjectId) {
+			auditDocumentId = documentId
+		} else if (documentId && typeof documentId === 'object' && '_id' in (documentId as any)) {
+			const maybeId = (documentId as any)._id
+			if (typeof maybeId === 'string' || maybeId instanceof mongoose.Types.ObjectId)
+				auditDocumentId = maybeId
 		}
 		if (!collectionName) return sendError(res, 'collectionName required', 400)
 
+		const authUser = req.user as
+			| { _id?: string | mongoose.Types.ObjectId }
+			| undefined
+		const auditUserId = authUser?._id
+			? typeof authUser._id === 'string'
+				? new mongoose.Types.ObjectId(String(authUser._id))
+				: (authUser._id as mongoose.Types.ObjectId)
+			: undefined
+
 		await safeAuditLog({
 			collectionName,
-			documentId: (documentId as any) ?? undefined,
-			action: 'access' as any,
-			user: (req.user as any)?._id,
+			documentId: auditDocumentId,
+			action: 'access',
+			user: auditUserId,
 			message: message ?? undefined,
 		})
 

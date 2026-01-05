@@ -22,8 +22,8 @@ export function decrypt(text: string | undefined): string | undefined {
 		const parts = text.split(':')
 		if (parts.length !== 2) return text // Not encrypted or legacy data
 
-		const iv = Buffer.from(parts[0], 'hex')
-		const encryptedText = Buffer.from(parts[1], 'hex')
+		const iv = Buffer.from(String(parts[0]), 'hex')
+		const encryptedText = Buffer.from(String(parts[1]), 'hex')
 		const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(KEY), iv)
 		let decrypted = decipher.update(encryptedText)
 		decrypted = Buffer.concat([decrypted, decipher.final()])

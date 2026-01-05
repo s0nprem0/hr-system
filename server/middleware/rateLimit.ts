@@ -1,6 +1,7 @@
 import rateLimit from 'express-rate-limit'
+import type { Request } from 'express'
 
-function shouldSkipRateLimit(req: any) {
+function shouldSkipRateLimit(req: Request) {
 	if (process.env.NODE_ENV === 'test') return true
 	try {
 		const bypass = req.headers['x-skip-rate-limit']

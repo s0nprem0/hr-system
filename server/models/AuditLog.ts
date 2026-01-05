@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose'
 export interface IAuditLog extends Document {
 	collectionName: string
 	documentId: mongoose.Types.ObjectId | string
-	action: 'create' | 'update' | 'delete'
+	action: 'create' | 'update' | 'delete' | 'access'
 	user?: mongoose.Types.ObjectId
 	before?: unknown
 	after?: unknown

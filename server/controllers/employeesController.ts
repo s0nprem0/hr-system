@@ -1,17 +1,41 @@
 import type { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
-import mongoose, { FilterQuery } from 'mongoose'
+import mongoose, { PipelineStage, Types } from 'mongoose'
 import User from '../models/User'
 import EmployeeProfile from '../models/EmployeeProfile'
 import logger from '../logger'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import safeAuditLog from '../utils/auditLogger'
 
+// Define types locally or import them if available in your project types
+type AuthUser = {
+	_id?: Types.ObjectId | string
+	email?: string
+	name?: string
+}
+
+// Helper to safely convert Mongoose documents or POJOs to plain objects
+type WithToObject = { toObject?: () => unknown }
+const toPlainObject = (obj: unknown): Record<string, unknown> => {
+	if (!obj) return {}
+	const maybe = obj as WithToObject
+	if (maybe && typeof maybe.toObject === 'function') {
+		const res = maybe.toObject()
+		if (res && typeof res === 'object') return res as Record<string, unknown>
+		return {}
+	}
+	if (typeof obj === 'object' && obj !== null)
+		return obj as Record<string, unknown>
+	return {}
+}
+
 // Helper to merge User + Profile for API responses
-const mergeUserProfile = (user: any, profile: any) => {
+const mergeUserProfile = (user: unknown, profile: unknown) => {
 	if (!user) return null
-	const u = user.toObject ? user.toObject() : user
-	const p = profile ? (profile.toObject ? profile.toObject() : profile) : {}
+
+	const u = toPlainObject(user)
+	const p = toPlainObject(profile)
+
 	// Flatten structure: User fields + Profile fields under 'profile' key
 	return {
 		...u,
@@ -34,7 +58,7 @@ const listEmployees = async (req: Request, res: Response) => {
 		const department = req.query.department as string | undefined
 
 		// Pipeline stages
-		const pipeline: any[] = []
+		const pipeline: PipelineStage[] = []
 
 		// 1. Join with EmployeeProfiles
 		pipeline.push({
@@ -65,7 +89,7 @@ const listEmployees = async (req: Request, res: Response) => {
 		})
 
 		// 4. Build Match filters
-		const match: FilterQuery<any> = {}
+		const match: Record<string, unknown> = {}
 
 		if (search) {
 			match.$or = [
@@ -159,7 +183,7 @@ const createEmployee = async (req: Request, res: Response) => {
 		const hashed = await bcrypt.hash(password, 10)
 
 		// 1. Create User
-		const [createdUser] = await User.create(
+		const createdUsers = await User.create(
 			[
 				{
 					name,
@@ -170,6 +194,11 @@ const createEmployee = async (req: Request, res: Response) => {
 			],
 			{ session }
 		)
+		const createdUser = createdUsers && createdUsers[0]
+		if (!createdUser) {
+			await session.abortTransaction()
+			return sendError(res, 'Failed to create user', 500)
+		}
 
 		// 2. Create Profile
 		// Map legacy 'profile' body structure to new EmployeeProfile fields
@@ -182,22 +211,36 @@ const createEmployee = async (req: Request, res: Response) => {
 			status: 'active',
 		}
 
-		const [createdProfile] = await EmployeeProfile.create([profileData], {
-			session,
-		})
+		// cast to any-ish shape to satisfy mongoose typing for create()
+		const createdProfiles = await EmployeeProfile.create(
+			[profileData as unknown as Record<string, unknown>],
+			{
+				session,
+			}
+		)
+		const createdProfile = createdProfiles && createdProfiles[0]
+		if (!createdProfile) {
+			await session.abortTransaction()
+			return sendError(res, 'Failed to create profile', 500)
+		}
 
 		await session.commitTransaction()
 
 		// Audit
+		const authUser = req.user as AuthUser | undefined
+		const auditUserId = authUser?._id
+			? typeof authUser._id === 'string'
+				? new mongoose.Types.ObjectId(String(authUser._id))
+				: (authUser._id as mongoose.Types.ObjectId)
+			: undefined
+
 		safeAuditLog({
 			collectionName: 'users',
 			action: 'create',
 			documentId: createdUser._id,
-			user: req.user && (req.user as any)._id,
+			user: auditUserId,
 			after: mergeUserProfile(createdUser, createdProfile),
-			message: `User created by ${
-				(req.user && (req.user as any).email) || 'system'
-			}`,
+			message: `User created by ${authUser?.email || 'system'}`,
 		}).catch(() => undefined)
 
 		return sendSuccess(res, mergeUserProfile(createdUser, createdProfile), 201)
@@ -219,7 +262,7 @@ const updateEmployee = async (req: Request, res: Response) => {
 		const updates = req.body
 
 		// 1. Update User fields
-		const userUpdates: any = {}
+		const userUpdates: Record<string, unknown> = {}
 		if (updates.name) userUpdates.name = updates.name
 		if (updates.email) userUpdates.email = updates.email
 		if (updates.role) userUpdates.role = updates.role
@@ -239,7 +282,7 @@ const updateEmployee = async (req: Request, res: Response) => {
 
 		// 2. Update Profile fields
 		// Flatten incoming profile updates
-		const profileUpdates: any = {}
+		const profileUpdates: Record<string, unknown> = {}
 		const p = updates.profile || {}
 
 		if (p.department) profileUpdates.department = p.department
@@ -259,15 +302,20 @@ const updateEmployee = async (req: Request, res: Response) => {
 
 		await session.commitTransaction()
 
+		const authUser = req.user as AuthUser | undefined
+		const auditUserId = authUser?._id
+			? typeof authUser._id === 'string'
+				? new mongoose.Types.ObjectId(String(authUser._id))
+				: (authUser._id as mongoose.Types.ObjectId)
+			: undefined
+
 		safeAuditLog({
 			collectionName: 'users',
 			action: 'update',
 			documentId: updatedUser._id,
-			user: req.user && (req.user as any)._id,
+			user: auditUserId,
 			after: mergeUserProfile(updatedUser, updatedProfile),
-			message: `User updated by ${
-				(req.user && (req.user as any).email) || 'system'
-			}`,
+			message: `User updated by ${authUser?.email || 'system'}`,
 		}).catch(() => undefined)
 
 		return sendSuccess(res, mergeUserProfile(updatedUser, updatedProfile))
@@ -297,14 +345,19 @@ const deleteEmployee = async (req: Request, res: Response) => {
 
 		await session.commitTransaction()
 
+		const authUser = req.user as AuthUser | undefined
+		const auditUserId = authUser?._id
+			? typeof authUser._id === 'string'
+				? new mongoose.Types.ObjectId(String(authUser._id))
+				: (authUser._id as mongoose.Types.ObjectId)
+			: undefined
+
 		safeAuditLog({
 			collectionName: 'users',
 			action: 'delete',
 			documentId: removedUser._id,
-			user: req.user && (req.user as any)._id,
-			message: `User deleted by ${
-				(req.user && (req.user as any).email) || 'system'
-			}`,
+			user: auditUserId,
+			message: `User deleted by ${authUser?.email || 'system'}`,
 		}).catch(() => undefined)
 
 		return sendSuccess(res, { success: true })

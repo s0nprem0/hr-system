@@ -1,6 +1,7 @@
 import AuditLog, { IAuditLog } from '../models/AuditLog'
 import logger from '../logger'
 import crypto from 'crypto'
+import mongoose from 'mongoose'
 
 type AuditEntry = Partial<
 	Pick<
@@ -199,9 +200,9 @@ export default async function safeAuditLog(entry: AuditEntry) {
 
 		await AuditLog.create({
 			collectionName: entry.collectionName,
-			documentId: (entry.documentId as any) ?? undefined,
+			documentId: entry.documentId ?? undefined,
 			action: entry.action,
-			user: entry.user as any,
+			user: entry.user as unknown as mongoose.Types.ObjectId | undefined,
 			before: storeBefore,
 			after: storeAfter,
 			changes: changes.length ? changes : undefined,

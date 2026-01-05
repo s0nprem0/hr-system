@@ -1,12 +1,15 @@
 import type { Request, Response } from 'express'
 import EmployeeDraft from '../models/EmployeeDraft'
+import mongoose from 'mongoose'
+type AuthUser = { _id?: string }
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
 import safeAuditLog from '../utils/auditLogger'
 
 const getDraft = async (req: Request, res: Response) => {
 	try {
-		const userId = req.user && (req.user as any)._id
+		const authUser = req.user as AuthUser | undefined
+		const userId = authUser?._id
 		if (!userId) return sendError(res, 'Unauthorized', 401)
 		const draft = await EmployeeDraft.findOne({ user: userId }).lean()
 		return sendSuccess(res, draft?.data || {})
@@ -18,7 +21,8 @@ const getDraft = async (req: Request, res: Response) => {
 
 const saveDraft = async (req: Request, res: Response) => {
 	try {
-		const userId = req.user && (req.user as any)._id
+		const authUser = req.user as AuthUser | undefined
+		const userId = authUser?._id
 		if (!userId) return sendError(res, 'Unauthorized', 401)
 		const payload = req.body || {}
 
@@ -56,10 +60,13 @@ const saveDraft = async (req: Request, res: Response) => {
 		)
 
 		// audit the draft save (non-blocking)
+		const auditUserId = userId
+			? new mongoose.Types.ObjectId(String(userId))
+			: undefined
 		safeAuditLog({
 			collectionName: 'employeeDrafts',
 			action: 'update',
-			user: userId,
+			user: auditUserId,
 			before: undefined,
 			after: data,
 			message: 'User saved an employee draft',
