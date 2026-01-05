@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose'
+import { encrypt, decrypt } from '../utils/encryption'
 
 export interface IEmployeeProfile extends Document {
 	user: mongoose.Types.ObjectId
@@ -9,12 +10,12 @@ export interface IEmployeeProfile extends Document {
 	status: 'active' | 'on-leave' | 'terminated'
 	dateOfJoining?: Date
 
-	// Compensation (Source of Truth for Payroll)
-	salary: number
+	// Compensation (Encrypted)
+	salary: string // Stored as encrypted string, accessed as string/number via getters
 	currency: string
 
 	// Personal Details
-	phone?: string
+	phone?: string // Encrypted
 	address?: {
 		street?: string
 		city?: string
@@ -54,10 +55,23 @@ const EmployeeProfileSchema = new Schema(
 		},
 		dateOfJoining: { type: Date },
 
-		salary: { type: Number, default: 0 },
+		// Sensitive Fields
+		salary: {
+			type: String,
+			set: (v: string | number) => encrypt(v),
+			get: (v: string) => {
+				const d = decrypt(v)
+				return d ? Number(d) : 0
+			},
+		},
+		phone: {
+			type: String,
+			set: (v: string) => encrypt(v),
+			get: (v: string) => decrypt(v),
+		},
+
 		currency: { type: String, default: 'USD' },
 
-		phone: { type: String },
 		address: {
 			street: String,
 			city: String,
@@ -71,7 +85,11 @@ const EmployeeProfileSchema = new Schema(
 			phone: String,
 		},
 	},
-	{ timestamps: true }
+	{
+		timestamps: true,
+		toJSON: { getters: true }, // Ensure getters run when converting to JSON
+		toObject: { getters: true },
+	}
 )
 
 // Index for frequent filters

@@ -28,7 +28,7 @@ function shouldSkipRateLimit(req: any) {
 	}
 }
 
-// Rate limiter for authentication endpoints (login)
+// 1. Login Limiter (Strict)
 export const loginRateLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	max: process.env.NODE_ENV === 'production' ? 10 : 1000,
@@ -41,7 +41,7 @@ export const loginRateLimiter = rateLimit({
 	},
 })
 
-// Rate limiter for refresh/logout endpoints (slightly higher threshold)
+// 2. Refresh/Logout Limiter (Moderate)
 export const refreshRateLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
 	max: process.env.NODE_ENV === 'production' ? 30 : 2000,
@@ -54,12 +54,10 @@ export const refreshRateLimiter = rateLimit({
 	},
 })
 
-export default loginRateLimiter
-
-// Rate limiter for frequent autosave/draft endpoints
+// 3. Draft Autosave Limiter (Fast but throttled)
 export const draftRateLimiter = rateLimit({
 	windowMs: 60 * 1000, // 1 minute
-	max: process.env.NODE_ENV === 'production' ? 30 : 2000,
+	max: process.env.NODE_ENV === 'production' ? 60 : 2000,
 	skip: shouldSkipRateLimit,
 	standardHeaders: true,
 	legacyHeaders: false,
@@ -68,3 +66,18 @@ export const draftRateLimiter = rateLimit({
 		error: 'Too many requests to draft endpoint, please slow down.',
 	},
 })
+
+// 4. Sensitive Write Limiter (New - For POST/PUT on Users, Payroll, etc.)
+export const writeRateLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000, // 1 hour
+	max: process.env.NODE_ENV === 'production' ? 200 : 5000, // Enough for normal work, stops automated spam
+	skip: shouldSkipRateLimit,
+	standardHeaders: true,
+	legacyHeaders: false,
+	message: {
+		success: false,
+		error: 'Write limit exceeded, please try again later.',
+	},
+})
+
+export default loginRateLimiter
