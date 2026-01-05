@@ -22,9 +22,6 @@ export {
 	CardDescription,
 	CardContent,
 } from './Card'
-export { default as MetricCard } from './MetricCard'
-export { default as ApprovalList } from './ApprovalList'
-export { default as Skeleton } from './Skeleton'
 export { Checkbox } from './Checkbox'
 export { Label } from './Label'
 export { default as FormCard } from './FormCard'
