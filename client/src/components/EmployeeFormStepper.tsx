@@ -240,12 +240,16 @@ export default function EmployeeFormStepper() {
 							<input
 								placeholder="First name"
 								ref={firstNameRef}
+								aria-label="First name"
+								aria-invalid={!!formErrors.firstName}
 								value={draft.firstName ?? ''}
 								onChange={(e) => update({ firstName: e.target.value })}
 								className="w-full border rounded p-2"
 							/>
 							<input
 								placeholder="Last name"
+								aria-label="Last name"
+								aria-invalid={!!formErrors.lastName}
 								value={draft.lastName ?? ''}
 								onChange={(e) => update({ lastName: e.target.value })}
 								className="w-full border rounded p-2"
@@ -253,6 +257,8 @@ export default function EmployeeFormStepper() {
 							<input
 								type="email"
 								placeholder="Email"
+								aria-label="Email"
+								aria-invalid={!!formErrors.email}
 								value={draft.email ?? ''}
 								onChange={(e) => update({ email: e.target.value })}
 								className="w-full border rounded p-2"
@@ -264,12 +270,14 @@ export default function EmployeeFormStepper() {
 						<div className="space-y-3">
 							<input
 								placeholder="Job title"
+								aria-label="Job title"
 								value={draft.jobTitle ?? ''}
 								onChange={(e) => update({ jobTitle: e.target.value })}
 								className="w-full border rounded p-2"
 							/>
 							<input
 								placeholder="Department"
+								aria-label="Department"
 								value={draft.department ?? ''}
 								onChange={(e) => update({ department: e.target.value })}
 								className="w-full border rounded p-2"
@@ -281,6 +289,8 @@ export default function EmployeeFormStepper() {
 						<div className="space-y-3">
 							<input
 								placeholder="0.00"
+								aria-label="Salary"
+								aria-invalid={!!formErrors.salary}
 								value={draft.salary ?? ''}
 								onChange={(e) => update({ salary: e.target.value })}
 								className="w-full border rounded p-2"
