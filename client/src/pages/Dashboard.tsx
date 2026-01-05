@@ -1,90 +1,186 @@
-import { useAuth } from '../context/AuthContext';
-import { formatRole } from '../context/AuthPermissions';
-import { useNavigate, Link } from 'react-router-dom';
-import { redirectToLogin } from '../utils/authRedirect';
-import PageContainer from '../components/layout/PageContainer';
+import { useAuth } from '../context/AuthContext'
+import { formatRole } from '../context/AuthPermissions'
+import { useNavigate, Link } from 'react-router-dom'
+import { redirectToLogin } from '../utils/authRedirect'
+import PageContainer from '../components/layout/PageContainer'
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+	Button,
+	MetricCard,
+	ApprovalList,
+} from '../components/ui'
 
 const Dashboard = () => {
-  const auth = useAuth();
-  const navigate = useNavigate();
+	const auth = useAuth()
+	const navigate = useNavigate()
 
-  const logout = () => {
-    auth?.logout();
-    redirectToLogin(navigate);
-  };
+	const logout = () => {
+		auth?.logout()
+		redirectToLogin(navigate)
+	}
 
-  const canManageEmployees = auth?.can?.("manageEmployees") ?? false;
-  const canManageUsers = auth?.can?.("manageUsers") ?? false;
+	const canManageEmployees = auth?.can?.('manageEmployees') ?? false
+	const canManageUsers = auth?.can?.('manageUsers') ?? false
 
-  const title = auth?.user ? formatRole(auth.user?.role) : 'Dashboard';
+	const title = auth?.user ? formatRole(auth.user?.role) : 'Dashboard'
 
-  return (
-    <PageContainer>
-      <div className="card mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">{title}</h1>
-            <p className="muted">Welcome, {auth?.user?.name}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/" className="muted">Home</Link>
-            <button onClick={logout} className="btn">Logout</button>
-          </div>
-        </div>
+	// Metrics — these would normally come from APIs; use placeholders
+	const metrics = [
+		{ id: 'headcount', title: 'Headcount', value: 124 },
+		{ id: 'new', title: 'New Joiners (30d)', value: 6 },
+		{ id: 'pending', title: 'Pending Approvals', value: 4 },
+		{ id: 'leaves', title: 'Upcoming Leaves', value: 3 },
+	]
 
-        {/* Admin view */}
-        {canManageUsers && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-2">Site Administration</h2>
-              <p className="muted">Manage users, roles and system settings.</p>
-            </div>
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-2">Reports</h2>
-              <p className="muted">View system reports and analytics.</p>
-            </div>
-          </div>
-        )}
+	const approvalItems = [
+		{
+			id: '1',
+			title: 'Leave request — Jane Employee',
+			subtitle: 'Mar 18 — 3 days',
+		},
+		{
+			id: '2',
+			title: 'Profile change request — John Employee',
+			subtitle: 'Pending manager review',
+		},
+	]
 
-        {/* HR view */}
-        {canManageEmployees && !canManageUsers && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card">
-              <h3 className="text-xl font-semibold mb-4">Employee Management</h3>
-              <div className="space-y-3">
-                <button className="w-full btn text-left">➕ Add New Employee</button>
-                <button className="w-full btn text-left">📋 View All Employees</button>
-                <button className="w-full btn text-left">🏢 Manage Departments</button>
-              </div>
-            </div>
+	const handleApprove = (id: string) => {
+		// wire to API or state update
+		console.log('approve', id)
+	}
 
-            <div className="card">
-              <h3 className="text-xl font-semibold mb-4">Leave & Attendance</h3>
-              <div className="space-y-3">
-                <button className="w-full btn text-left">✅ Approve Leave Requests</button>
-                <button className="w-full btn text-left">🕒 Review Attendance Logs</button>
-                <button className="w-full btn text-left">⚠️ View Audit Logs</button>
-              </div>
-            </div>
-          </div>
-        )}
+	const handleDeny = (id: string) => {
+		console.log('deny', id)
+	}
 
-        {/* Employee view */}
-        {auth?.user && !canManageEmployees && !canManageUsers && (
-          <div className="card">
-            <h2 className="text-xl font-semibold mb-2">My Profile</h2>
-            <p className="muted">Name: {auth?.user?.name}</p>
-            <p className="muted">Role: {formatRole(auth?.user?.role)}</p>
-          </div>
-        )}
+	return (
+		<PageContainer>
+			<div className="mb-6">
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="text-2xl font-bold">{title}</h1>
+						<p className="muted">Welcome, {auth?.user?.name}</p>
+					</div>
+					<div className="flex items-center gap-3">
+						<Link to="/" className="muted">
+							Home
+						</Link>
+						<Button onClick={logout} variant="ghost">
+							Logout
+						</Button>
+					</div>
+				</div>
+			</div>
 
-        {/* Fallback for roles not matched */}
-        {!auth?.user && (
-          <div className="card">
-            <p className="muted">No role assigned. Contact administrator.</p>
-          </div>
-        )}
-    </PageContainer>
-  );
-};
+			{/* Metric cards */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+				{metrics.map((m) => (
+					<MetricCard key={m.id} title={m.title} value={m.value} />
+				))}
+			</div>
 
-export default Dashboard;
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				{/* Approvals / Tasks (wide) */}
+				<div className="lg:col-span-2">
+					<ApprovalList
+						items={approvalItems}
+						onApprove={handleApprove}
+						onDeny={handleDeny}
+					/>
+				</div>
+
+				{/* Attendance exceptions / quick actions */}
+				<div>
+					<Card>
+						<CardHeader>
+							<CardTitle>Attendance Exceptions</CardTitle>
+							<CardDescription>
+								Late check-ins and missing punches
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<ul className="space-y-2">
+								<li className="flex items-center justify-between">
+									<div>
+										<div className="font-medium">Mark late — Alan Smith</div>
+										<div className="text-sm muted">Today, 09:22</div>
+									</div>
+									<Button size="sm" variant="ghost">
+										Resolve
+									</Button>
+								</li>
+								<li className="flex items-center justify-between">
+									<div>
+										<div className="font-medium">
+											Missing punch — Rita Gomez
+										</div>
+										<div className="text-sm muted">Yesterday</div>
+									</div>
+									<Button size="sm" variant="ghost">
+										Add entry
+									</Button>
+								</li>
+							</ul>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+
+			{/* Role-specific smaller cards */}
+			{canManageUsers && (
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+					<Card>
+						<CardHeader>
+							<CardTitle>System Health</CardTitle>
+							<CardDescription>Background jobs and cron status</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div className="text-sm muted">All systems operational</div>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Reports</CardTitle>
+							<CardDescription>Generate exports and analytics</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Button>Generate report</Button>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Audit</CardTitle>
+							<CardDescription>Recent critical events</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div className="text-sm muted">No critical events</div>
+						</CardContent>
+					</Card>
+				</div>
+			)}
+
+			{/* Employee simple view */}
+			{auth?.user && !canManageEmployees && !canManageUsers && (
+				<div className="mt-6">
+					<Card>
+						<CardHeader>
+							<CardTitle>My Profile</CardTitle>
+							<CardDescription>Quick links for employees</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<p className="muted">Name: {auth.user.name}</p>
+							<p className="muted">Role: {formatRole(auth.user.role)}</p>
+						</CardContent>
+					</Card>
+				</div>
+			)}
+		</PageContainer>
+	)
+}
+
+export default Dashboard
