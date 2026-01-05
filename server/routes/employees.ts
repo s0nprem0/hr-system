@@ -15,7 +15,12 @@ import {
 	importDryRun,
 	importCommit,
 } from '../controllers/employeeImportController'
-import { getDraft, saveDraft } from '../controllers/employeeDraftController'
+import {
+	getDraft,
+	saveDraft,
+	publishDraft,
+	discardDraft,
+} from '../controllers/employeeDraftController'
 
 const router = express.Router()
 
@@ -134,6 +139,20 @@ router.post(
 		.withMessage('salary must be a number'),
 	validationHandler,
 	saveDraft
+)
+
+// Publish and discard draft
+router.post(
+	'/draft/publish',
+	verifyUser,
+	requirePermission('manageEmployees'),
+	publishDraft
+)
+router.delete(
+	'/draft',
+	verifyUser,
+	requirePermission('manageEmployees'),
+	discardDraft
 )
 
 // CSV import (dry-run): accept CSV text and a mapping, return preview with errors

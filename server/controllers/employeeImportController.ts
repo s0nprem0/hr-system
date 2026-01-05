@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import mongoose from 'mongoose'
+import validation from '../utils/validation'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
 import User from '../models/User'
@@ -120,7 +121,7 @@ async function processRows(rows: string[][], mapping: Record<string, string>) {
 				}
 			} else if (target === 'department') {
 				if (val) {
-					if (!mongoose.isValidObjectId(val)) {
+					if (!validation.isObjectId(val)) {
 						errors.push('Invalid Department ID')
 					} else {
 						mapped.department = val
@@ -133,7 +134,7 @@ async function processRows(rows: string[][], mapping: Record<string, string>) {
 
 		// Validation
 		const email = mapped.email
-		if (!email || !/\S+@\S+\.\S+/.test(email)) {
+		if (!email || !validation.isEmail(email)) {
 			errors.push('Valid email required')
 		} else if (existingEmails.has(email)) {
 			errors.push('Email already exists')
