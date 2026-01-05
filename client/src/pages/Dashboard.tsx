@@ -10,9 +10,9 @@ import {
 	CardDescription,
 	CardContent,
 	Button,
-	MetricCard,
-	ApprovalList,
 } from '../components/ui'
+import MetricCard from '../components/ui/MetricCard'
+import ApprovalList from '../components/ui/ApprovalList'
 
 const Dashboard = () => {
 	const auth = useAuth()
