@@ -9,6 +9,7 @@ import User from '../models/User'
 import { sendSuccess, sendError } from '../utils/apiResponse'
 import logger from '../logger'
 import safeAuditLog from '../utils/auditLogger'
+import employeeService from '../services/employeeService'
 import { writeRateLimiter } from '../middleware/rateLimit'
 import { enforceContentLength } from '../middleware/security'
 
@@ -122,27 +123,27 @@ router.post(
 			const existing = await User.findOne({ email })
 			if (existing) return sendError(res, 'Email already in use', 409)
 
-			const bcrypt = await import('bcryptjs')
-			const hashed = await bcrypt.hash(password, 10)
+			const authUser = req.user
+			const auditUserId = authUser?._id
 
-			const created = await User.create({
+			const dto = {
 				name,
 				email,
-				password: hashed,
+				password,
 				role: role || 'employee',
-			})
-			const result = await User.findById(created._id).select('-password')
+			}
 
-			await safeAuditLog({
-				collectionName: 'User',
-				documentId: created._id,
-				action: 'create',
-				user: req.user?._id,
-				before: null,
-				after: result,
-			})
+			const result = await employeeService.createUserAndProfile(
+				dto as any,
+				auditUserId
+			)
 
-			return sendSuccess(res, result, 201)
+			// Return created user without password
+			const created = await User.findById(result.user._id)
+				.select('-password')
+				.lean()
+
+			return sendSuccess(res, created, 201)
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err)
 			return sendError(res, msg, 500)

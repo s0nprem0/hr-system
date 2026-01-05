@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 // express-validator handled via middleware; no local import needed
 import User from '../models/User'
 import bcrypt from 'bcryptjs'
+import employeeService from '../services/employeeService'
 import * as jwt from 'jsonwebtoken'
 import type { Secret } from 'jsonwebtoken'
 import logger from '../logger'
@@ -178,19 +179,15 @@ const register = async (req: Request, res: Response) => {
 			return sendError(res, 'Email already in use', 409)
 		}
 
-		const hashed = await bcrypt.hash(password, 10)
-		const created = await User.create({
-			name,
-			email,
-			password: hashed,
-			role: 'employee',
-		})
+		// Delegate creation to employeeService to centralize hashing/audit
+		const dto = { name, email, password, role: 'employee' }
+		const created = await employeeService.createUserAndProfile(dto as any)
+		// created.user may be a mongoose document; fetch user without password
+		const userSafe = await User.findById(created.user._id)
+			.select('-password')
+			.lean()
 
-		return sendSuccess(
-			res,
-			{ user: { _id: created._id, name: created.name, role: created.role } },
-			201
-		)
+		return sendSuccess(res, { user: userSafe }, 201)
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err)
 		logger.error({ err }, 'Register error')
