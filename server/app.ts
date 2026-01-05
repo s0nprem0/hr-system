@@ -10,6 +10,8 @@ import usersRouter from './routes/users'
 import employeesRouter from './routes/employees'
 import departmentsRouter from './routes/departments'
 import payrollRouter from './routes/payroll'
+import attendanceRouter from './routes/attendance'
+import leaveRouter from './routes/leave'
 import auditsRouter from './routes/audits'
 import errorHandler from './middleware/errorHandler'
 
@@ -94,6 +96,8 @@ export default function createApp() {
 	app.use('/api/employees', csrfProtection(), employeesRouter)
 	app.use('/api/departments', csrfProtection(), departmentsRouter)
 	app.use('/api/payroll', csrfProtection(), payrollRouter)
+	app.use('/api/attendance', csrfProtection(), attendanceRouter)
+	app.use('/api/leave', csrfProtection(), leaveRouter)
 	app.use('/api/audits', csrfProtection(), auditsRouter)
 
 	app.get('/health', (req, res) => {
