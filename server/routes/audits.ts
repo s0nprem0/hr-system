@@ -3,6 +3,7 @@ import { query, param, body } from 'express-validator'
 import verifyUser from '../middleware/authMiddleware'
 import requirePermission from '../middleware/requirePermission'
 import validationHandler from '../middleware/validationHandler'
+import { writeRateLimiter } from '../middleware/rateLimit'
 import { listAuditLogs } from '../controllers/auditController'
 import { getAuditLog, logAuditEvent } from '../controllers/auditController'
 
@@ -33,11 +34,21 @@ router.get(
 router.post(
 	'/event',
 	verifyUser,
+	writeRateLimiter,
 	[
 		body('collectionName')
 			.trim()
 			.notEmpty()
 			.withMessage('collectionName is required'),
+		body('documentId')
+			.optional()
+			.isMongoId()
+			.withMessage('documentId must be a valid id'),
+		body('message')
+			.optional()
+			.trim()
+			.isLength({ max: 2000 })
+			.withMessage('message is too long'),
 	],
 	validationHandler,
 	logAuditEvent

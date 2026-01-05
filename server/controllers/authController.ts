@@ -137,7 +137,7 @@ const login = async (req: Request, res: Response) => {
 		const cookieOptions = {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax' as const,
+			sameSite: 'strict' as const,
 			path: '/api/auth',
 			maxAge: refreshTtlSeconds * 1000,
 		}
@@ -234,8 +234,11 @@ const refresh = async (req: Request, res: Response) => {
 		// If we didn't find a valid token to rotate, check if the token exists and was already revoked
 		if (!found) {
 			const existing = await RefreshToken.findOne({ tokenHash: incomingHash })
-			if (!existing)
+			if (!existing) {
+				// Clear cookie to avoid leaving an invalid token client-side
+				res.clearCookie('refreshToken', { path: '/api/auth' })
 				return sendError(res, 'Refresh token invalid or expired', 401)
+			}
 
 			// Token exists but is already revoked -> possible reuse attack
 			if (existing.revoked) {
@@ -263,10 +266,13 @@ const refresh = async (req: Request, res: Response) => {
 			}
 
 			// Token exists but is expired
-			if (existing.expiresAt <= now)
+			if (existing.expiresAt <= now) {
+				res.clearCookie('refreshToken', { path: '/api/auth' })
 				return sendError(res, 'Refresh token invalid or expired', 401)
+			}
 
 			// Fallback: treat as invalid
+			res.clearCookie('refreshToken', { path: '/api/auth' })
 			return sendError(res, 'Refresh token invalid', 401)
 		}
 
@@ -300,7 +306,7 @@ const refresh = async (req: Request, res: Response) => {
 		const cookieOptions2 = {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax' as const,
+			sameSite: 'strict' as const,
 			path: '/api/auth',
 			maxAge: refreshTtlSeconds2 * 1000,
 		}
@@ -349,8 +355,9 @@ const logout = async (req: Request, res: Response) => {
 			{ $set: { revoked: true } },
 			{ new: true }
 		)
-		// Clear cookie on logout (best-effort)
+		// Clear cookies on logout (best-effort)
 		res.clearCookie('refreshToken', { path: '/api/auth' })
+		res.clearCookie('csrfToken', { path: '/' })
 		return sendSuccess(res, { revoked: !!result }, 200)
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err)
