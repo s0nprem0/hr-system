@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import User from '../models/User'
 import EmployeeProfile from '../models/EmployeeProfile'
 import logger from '../logger'
@@ -37,10 +38,11 @@ export async function createUserAndProfile(
 		let createdNew = false
 
 		if (!user) {
-			const hashed = await bcrypt.hash(
-				password ?? process.env.DEFAULT_IMPORT_PASSWORD ?? 'ChangeMe@123',
-				10
-			)
+			const rawPassword =
+				password ??
+				process.env.DEFAULT_IMPORT_PASSWORD ??
+				crypto.randomBytes(12).toString('hex')
+			const hashed = await bcrypt.hash(rawPassword, 10)
 			const created = (await User.create(
 				[
 					{
@@ -55,6 +57,10 @@ export async function createUserAndProfile(
 			user = created && created[0]
 			if (!user) throw new Error('Failed to create user')
 			createdNew = true
+			// attach generated temp password only when caller did not supply one
+			var generatedPassword: string | undefined = password
+				? undefined
+				: rawPassword
 		} else {
 			// Update name and role if provided
 			let changed = false
@@ -122,7 +128,7 @@ export async function createUserAndProfile(
 			)
 		}
 
-		return { user, profile: empProfile }
+		return { user, profile: empProfile, tempPassword: generatedPassword }
 	} catch (err) {
 		await session.abortTransaction()
 		throw err
@@ -145,10 +151,7 @@ export async function publishDraft(
 	const dto: CreateEmployeeDTO = {
 		name,
 		email: String(draftData.email),
-		password:
-			draftData.password ??
-			process.env.DEFAULT_IMPORT_PASSWORD ??
-			'ChangeMe@123',
+		password: draftData.password ?? undefined,
 		role: draftData.role ?? 'employee',
 		profile: {
 			designation: draftData.jobTitle || draftData.designation,

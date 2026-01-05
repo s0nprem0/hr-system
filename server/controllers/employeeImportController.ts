@@ -155,8 +155,7 @@ async function processRows(rows: string[][], mapping: Record<string, string>) {
 				department: mapped.department,
 				salary: mapped.salary,
 			},
-			// Default password for imported users
-			password: 'ChangeMe@123',
+			// password omitted: service will generate secure temporary password when creating user
 		}
 
 		results.push({ finalUser, mapped, errors })
