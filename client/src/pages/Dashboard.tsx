@@ -13,6 +13,9 @@ import {
 } from '../components/ui'
 import MetricCard from '../components/ui/MetricCard'
 import ApprovalList from '../components/ui/ApprovalList'
+import Skeleton from '../components/ui/Skeleton'
+import { useEffect, useState } from 'react'
+import { useToast } from '../context/ToastContext'
 
 const Dashboard = () => {
 	const auth = useAuth()
@@ -28,35 +31,106 @@ const Dashboard = () => {
 
 	const title = auth?.user ? formatRole(auth.user?.role) : 'Dashboard'
 
-	// Metrics — these would normally come from APIs; use placeholders
-	const metrics = [
-		{ id: 'headcount', title: 'Headcount', value: 124 },
-		{ id: 'new', title: 'New Joiners (30d)', value: 6 },
-		{ id: 'pending', title: 'Pending Approvals', value: 4 },
-		{ id: 'leaves', title: 'Upcoming Leaves', value: 3 },
-	]
+	// Local UI state for metrics and approvals (fetched from API)
+	const [metricsData, setMetricsData] = useState<
+		{ id: string; title: string; value: number }[]
+	>([])
+	const [metricsLoading, setMetricsLoading] = useState(true)
 
-	const approvalItems = [
-		{
-			id: '1',
-			title: 'Leave request — Jane Employee',
-			subtitle: 'Mar 18 — 3 days',
-		},
-		{
-			id: '2',
-			title: 'Profile change request — John Employee',
-			subtitle: 'Pending manager review',
-		},
-	]
+	const [approvals, setApprovals] = useState<
+		{ id: string; title: string; subtitle?: string }[]
+	>([])
+	const [approvalsLoading, setApprovalsLoading] = useState(true)
 
-	const handleApprove = (id: string) => {
-		// wire to API or state update
-		console.log('approve', id)
+	// Fetch metrics
+	useEffect(() => {
+		let mounted = true
+		const fetchMetrics = async () => {
+			setMetricsLoading(true)
+			try {
+				const res = await fetch('/api/metrics')
+				if (!res.ok) throw new Error('Failed to fetch metrics')
+				const data = await res.json()
+				if (!mounted) return
+				// Expecting data.metrics or raw array
+				setMetricsData(data.metrics ?? data)
+			} catch (err) {
+				console.error(err)
+			} finally {
+				if (mounted) setMetricsLoading(false)
+			}
+		}
+		fetchMetrics()
+		return () => {
+			mounted = false
+		}
+	}, [])
+
+	// Fetch approvals
+	useEffect(() => {
+		let mounted = true
+		const fetchApprovals = async () => {
+			setApprovalsLoading(true)
+			try {
+				const res = await fetch('/api/approvals')
+				if (!res.ok) throw new Error('Failed to fetch approvals')
+				const data = await res.json()
+				if (!mounted) return
+				setApprovals(data.items ?? data)
+			} catch (err) {
+				console.error(err)
+			} finally {
+				if (mounted) setApprovalsLoading(false)
+			}
+		}
+		fetchApprovals()
+		return () => {
+			mounted = false
+		}
+	}, [])
+
+	const toast = useToast()
+
+	// Optimistic approve/deny handlers with toast feedback
+	const handleApprove = async (id: string) => {
+		const prev = approvals
+		setApprovals((s) => s.filter((a) => a.id !== id))
+		try {
+			const res = await fetch(`/api/approvals/${id}/approve`, {
+				method: 'POST',
+			})
+			if (!res.ok) {
+				const text = await res.text()
+				throw new Error(text || 'Approve failed')
+			}
+			toast.showToast('Approval successful', 'success')
+		} catch (err: unknown) {
+			console.error(err)
+			setApprovals(prev)
+			const msg = err instanceof Error ? err.message : String(err)
+			toast.showToast(msg || 'Failed to approve', 'error')
+		}
 	}
 
-	const handleDeny = (id: string) => {
-		console.log('deny', id)
+	const handleDeny = async (id: string) => {
+		const prev = approvals
+		setApprovals((s) => s.filter((a) => a.id !== id))
+		try {
+			const res = await fetch(`/api/approvals/${id}/deny`, { method: 'POST' })
+			if (!res.ok) {
+				const text = await res.text()
+				throw new Error(text || 'Deny failed')
+			}
+			toast.showToast('Denied successfully', 'success')
+		} catch (err: unknown) {
+			console.error(err)
+			setApprovals(prev)
+			const msg = err instanceof Error ? err.message : String(err)
+			toast.showToast(msg || 'Failed to deny', 'error')
+		}
 	}
+
+	// (approvalItems placeholder removed — using `approvals` state)
 
 	return (
 		<PageContainer>
@@ -79,19 +153,46 @@ const Dashboard = () => {
 
 			{/* Metric cards */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-				{metrics.map((m) => (
-					<MetricCard key={m.id} title={m.title} value={m.value} />
-				))}
+				{metricsLoading
+					? [1, 2, 3, 4].map((n) => (
+							<div key={n} className="p-4">
+								<Skeleton className="h-20 w-full" />
+							</div>
+					  ))
+					: metricsData.map((m) => (
+							<MetricCard key={m.id} title={m.title} value={m.value} />
+					  ))}
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				{/* Approvals / Tasks (wide) */}
 				<div className="lg:col-span-2">
-					<ApprovalList
-						items={approvalItems}
-						onApprove={handleApprove}
-						onDeny={handleDeny}
-					/>
+					{approvalsLoading ? (
+						<Card>
+							<CardHeader>
+								<CardTitle>Approvals</CardTitle>
+								<CardDescription>Recent items requiring action</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ul className="space-y-3">
+									<li>
+										<Skeleton className="h-6 w-3/4 mb-2" />
+										<Skeleton className="h-6 w-1/2" />
+									</li>
+									<li>
+										<Skeleton className="h-6 w-3/4 mb-2" />
+										<Skeleton className="h-6 w-1/2" />
+									</li>
+								</ul>
+							</CardContent>
+						</Card>
+					) : (
+						<ApprovalList
+							items={approvals}
+							onApprove={handleApprove}
+							onDeny={handleDeny}
+						/>
+					)}
 				</div>
 
 				{/* Attendance exceptions / quick actions */}
