@@ -49,7 +49,12 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 			className="fixed top-0 left-0 right-0 h-16 app-header z-10 md:left-64"
 		>
 			<div className="h-full container-main flex items-center justify-between">
-				<div className="md:flex-1" />
+				<div className="md:flex-1 flex items-center">
+					{/* Mobile app title for context when sidebar is collapsed */}
+					<span className="md:hidden text-lg font-semibold mr-(--space-4)">
+						HR System
+					</span>
+				</div>
 
 				<div className="flex items-center gap-(--space-4)">
 					<Button
@@ -57,6 +62,8 @@ const Navbar = ({ onMenuToggle }: NavbarProps) => {
 						className="md:hidden p-(--space-2) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--cp-cta)"
 						onClick={onMenuToggle}
 						aria-label="Toggle menu"
+						aria-controls="sidebar-nav"
+						aria-expanded={menuOpen}
 					>
 						<Menu className="h-5 w-5" />
 					</Button>

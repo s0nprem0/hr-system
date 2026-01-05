@@ -41,6 +41,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 			<aside
 				role="navigation"
 				aria-label="Main navigation"
+				id="sidebar-nav"
 				className={`fixed left-0 top-0 h-screen w-64 bg-(--cp-surface) border-r border-(--cp-border) overflow-y-auto z-30 transition-transform duration-300 ${
 					isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
 				}`}

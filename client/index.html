@@ -1,13 +1,19 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>client</title>
+	</head>
+	<body>
+		<a
+			href="#root"
+			class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 bg-(--cp-cta) text-white px-3 py-2 rounded"
+		>
+			Skip to main content
+		</a>
+		<div id="root" tabindex="-1"></div>
+		<script type="module" src="/src/main.tsx"></script>
+	</body>
 </html>
