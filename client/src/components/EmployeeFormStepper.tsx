@@ -99,6 +99,9 @@ export default function EmployeeFormStepper() {
 		} catch (err) {
 			console.warn('Failed to clear draft', err)
 		}
+
+		// also clear server-side draft if possible
+		api.post('/api/employees/draft', {}).catch(() => undefined)
 	}
 
 	const [confirmOpen, setConfirmOpen] = useState(false)
@@ -160,6 +163,19 @@ export default function EmployeeFormStepper() {
 	const toast = useToast()
 	const [saving, setSaving] = useState(false)
 
+	const hasDraft = Object.keys(draft || {}).length > 0
+
+	const resumeDraft = () => {
+		firstNameRef.current?.focus()
+		toast.showToast('Draft restored', 'info')
+	}
+
+	const discardDraft = () => {
+		if (!confirm('Discard the current draft? This cannot be undone.')) return
+		clearDraft()
+		toast.showToast('Draft discarded', 'success')
+	}
+
 	function generatePassword(len = 12) {
 		const chars =
 			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-='
@@ -169,10 +185,40 @@ export default function EmployeeFormStepper() {
 		return out
 	}
 
+	const copyPassword = async () => {
+		try {
+			if (!generatedPassword) return
+			await navigator.clipboard.writeText(generatedPassword)
+			toast.showToast('Password copied to clipboard', 'success')
+		} catch {
+			toast.showToast('Failed to copy password', 'error')
+		}
+	}
+
 	return (
 		<>
 			<div className="p-6 bg-white rounded shadow">
 				<h2 className="text-xl font-semibold mb-4">Add / Edit Employee</h2>
+
+				{hasDraft && (
+					<div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-300 flex items-center justify-between">
+						<div className="text-sm">A draft is available for this form.</div>
+						<div className="flex gap-2">
+							<button
+								onClick={resumeDraft}
+								className="px-2 py-1 bg-white rounded border text-sm"
+							>
+								Resume
+							</button>
+							<button
+								onClick={discardDraft}
+								className="px-2 py-1 bg-white rounded border text-sm"
+							>
+								Discard
+							</button>
+						</div>
+					</div>
+				)}
 
 				<nav className="mb-4 flex gap-2">
 					{steps.map((s, i) => (
@@ -314,8 +360,14 @@ export default function EmployeeFormStepper() {
 						You're about to create a new employee with the following temporary
 						password. Share it securely with the user.
 					</p>
-					<div className="mt-2 p-3 bg-gray-50 rounded border">
+					<div className="mt-2 p-3 bg-gray-50 rounded border flex items-center justify-between">
 						<code className="font-mono">{generatedPassword}</code>
+						<button
+							className="ml-4 px-2 py-1 bg-white rounded border text-sm"
+							onClick={copyPassword}
+						>
+							Copy
+						</button>
 					</div>
 
 					<div className="flex justify-end gap-2">
