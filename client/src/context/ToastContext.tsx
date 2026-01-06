@@ -65,7 +65,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
 				{toasts.map((t) => (
 					<div
 						key={t.id}
-						className={`px-(--space-4) py-(--space-2) rounded shadow text-sm max-w-xs wrap-break-wordbreak-words ${
+						className={`px-(--space-4) py-(--space-2) rounded shadow text-sm max-w-xs wrap-break-word ${
 							t.type === 'success'
 								? 'bg-green-100 text-green-900'
 								: t.type === 'error'

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import MaskedValue from './ui/MaskedValue'
 
 interface DiffViewerProps {
@@ -92,21 +92,21 @@ export default function DiffViewer({
 		return (
 			<div
 				key={name}
-				className={`p-2 rounded border ${
+				className={`p-3 rounded-md border ${
 					changed
 						? 'bg-[color-mix(in srgb, var(--cp-surface) 96%, var(--cp-bg) 4%)]'
 						: ''
 				}`}
 			>
 				<div className="flex items-start justify-between">
-					<div className="font-medium">{name}</div>
-					<div className="text-xs muted">
-						{changed ? 'changed' : 'unchanged'}
+					<div className="text-base font-semibold">{name}</div>
+					<div className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+						{changed ? 'Changed' : 'Unchanged'}
 					</div>
 				</div>
-				<div className="mt-2 grid md:grid-cols-2 grid-cols-1 gap-4 text-sm">
+				<div className="mt-3 grid md:grid-cols-2 grid-cols-1 gap-4 text-sm">
 					<div>
-						<div className="text-xs muted">Before</div>
+						<div className="text-xs text-muted">Before</div>
 						<div className="mt-1">
 							{isPrimitive(bv) ? (
 								typeof bv === 'string' ? (
@@ -114,20 +114,20 @@ export default function DiffViewer({
 										value={bv}
 										auditCollection={collectionName}
 										auditDocumentId={documentId}
-										className="font-mono"
+										className="font-mono text-sm"
 									/>
 								) : (
-									<code className="font-mono">{String(bv)}</code>
+									<code className="font-mono text-sm">{String(bv)}</code>
 								)
 							) : (
-								<pre className="max-h-48 overflow-auto rounded p-2 text-xs bg-[color-mix(in srgb, var(--cp-surface) 96%, var(--cp-bg) 4%)]">
+								<pre className="max-h-56 overflow-auto rounded-md p-3 text-sm bg-slate-50 text-slate-800 whitespace-pre-wrap wrap-break-word">
 									{bv ? JSON.stringify(bv, null, 2) : '—'}
 								</pre>
 							)}
 						</div>
 					</div>
 					<div>
-						<div className="text-xs muted">After</div>
+						<div className="text-xs text-muted">After</div>
 						<div className="mt-1">
 							{isPrimitive(av) ? (
 								typeof av === 'string' ? (
@@ -135,13 +135,13 @@ export default function DiffViewer({
 										value={av}
 										auditCollection={collectionName}
 										auditDocumentId={documentId}
-										className="font-mono"
+										className="font-mono text-sm"
 									/>
 								) : (
-									<code className="font-mono">{String(av)}</code>
+									<code className="font-mono text-sm">{String(av)}</code>
 								)
 							) : (
-								<pre className="max-h-48 overflow-auto rounded p-2 text-xs bg-[color-mix(in srgb, var(--cp-surface) 96%, var(--cp-bg) 4%)]">
+								<pre className="max-h-56 overflow-auto rounded-md p-3 text-sm bg-slate-50 text-slate-800 whitespace-pre-wrap wrap-break-word">
 									{av ? JSON.stringify(av, null, 2) : '—'}
 								</pre>
 							)}
