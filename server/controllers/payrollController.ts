@@ -128,13 +128,22 @@ const createPayroll = async (req: Request, res: Response) => {
 		const tax = Number(resolvedGross! * taxRate)
 		const net = Number(resolvedGross! - tax)
 
+		const pStart = periodStart ? new Date(periodStart) : new Date()
+		const pEnd = periodEnd ? new Date(periodEnd) : undefined
+		if (isNaN(pStart.getTime()))
+			return sendError(res, 'Invalid periodStart', 400)
+		if (pEnd && isNaN(pEnd.getTime()))
+			return sendError(res, 'Invalid periodEnd', 400)
+		if (pEnd && pEnd < pStart)
+			return sendError(res, 'periodEnd must be same or after periodStart', 400)
+
 		const entry = await Payroll.create({
 			employee: employeeId,
 			gross: resolvedGross,
 			net,
 			tax,
-			periodStart: periodStart ? new Date(periodStart) : new Date(),
-			periodEnd: periodEnd ? new Date(periodEnd) : undefined,
+			periodStart: pStart,
+			periodEnd: pEnd,
 			payDate: payDate ? new Date(payDate) : undefined,
 		})
 		const result = await Payroll.findById(entry._id).populate(
@@ -172,10 +181,23 @@ const updatePayroll = async (req: Request, res: Response) => {
 			delete updates.employeeId
 		}
 		if (updates.payDate) updates.payDate = new Date(String(updates.payDate))
-		if (updates.periodStart)
-			updates.periodStart = new Date(String(updates.periodStart))
-		if (updates.periodEnd)
-			updates.periodEnd = new Date(String(updates.periodEnd))
+		if (updates.periodStart) {
+			const ps = new Date(String(updates.periodStart))
+			if (isNaN(ps.getTime())) return sendError(res, 'Invalid periodStart', 400)
+			updates.periodStart = ps
+		}
+		if (updates.periodEnd) {
+			const pe = new Date(String(updates.periodEnd))
+			if (isNaN(pe.getTime())) return sendError(res, 'Invalid periodEnd', 400)
+			// If both provided, ensure end >= start
+			if (updates.periodStart && pe < (updates.periodStart as Date))
+				return sendError(
+					res,
+					'periodEnd must be same or after periodStart',
+					400
+				)
+			updates.periodEnd = pe
+		}
 		// if gross provided (string or number), coerce and recompute tax/net
 		if (updates.gross !== undefined && updates.gross !== null) {
 			const grossVal = Number(updates.gross)

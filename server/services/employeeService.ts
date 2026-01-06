@@ -33,8 +33,16 @@ export async function createUserAndProfile(
 	try {
 		const { name, email, password, role, profile } = dto
 
+		// Normalize email to avoid duplicate-account edge cases
+		const normalizedEmail = String(email || '')
+			.trim()
+			.toLowerCase()
+		if (!normalizedEmail) throw new Error('Email is required')
+
 		// Find existing user by email
-		let user = (await User.findOne({ email }).session(session)) as any | null
+		let user = (await User.findOne({ email: normalizedEmail }).session(
+			session
+		)) as any | null
 		let createdNew = false
 
 		if (!user) {
@@ -47,7 +55,7 @@ export async function createUserAndProfile(
 				[
 					{
 						name,
-						email,
+						email: normalizedEmail,
 						password: hashed,
 						role: (role as 'admin' | 'hr' | 'employee') || 'employee',
 					},
@@ -84,7 +92,10 @@ export async function createUserAndProfile(
 		if (profile) {
 			if (profile.department) profileData.department = profile.department
 			if (profile.designation) profileData.jobTitle = profile.designation
-			if (profile.salary != null) profileData.salary = profile.salary
+			if (profile.salary != null) {
+				const s = Number(profile.salary)
+				if (!Number.isNaN(s) && s >= 0) profileData.salary = s
+			}
 		}
 
 		let empProfile = (await EmployeeProfile.findOne({ user: user._id }).session(

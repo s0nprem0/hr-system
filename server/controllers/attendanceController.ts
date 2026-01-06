@@ -15,14 +15,27 @@ const checkIn = async (req: Request, res: Response) => {
 		)
 
 		let record = await Attendance.findOne({ user: userId, date: dateOnly })
+		const now = new Date()
+		let action: 'create' | 'update' = 'create'
 		if (!record) {
 			record = await Attendance.create({
 				user: userId,
 				date: dateOnly,
-				checkIn: new Date(),
+				checkIn: now,
 			})
+			action = 'create'
 		} else {
-			record.checkIn = new Date()
+			// Prevent accidental rapid duplicate check-ins (5 minute window)
+			if (record.checkIn && !record.checkOut) {
+				const prev = new Date(record.checkIn)
+				if (now.getTime() - prev.getTime() < 5 * 60 * 1000) {
+					return sendError(res, 'Already checked in recently', 409)
+				}
+			}
+
+			record.checkIn = now
+			record.checkOut = undefined
+			action = 'update'
 			await record.save()
 		}
 
@@ -53,7 +66,15 @@ const checkOut = async (req: Request, res: Response) => {
 		if (!rec) return sendError(res, 'Attendance record not found', 404)
 
 		// Only owner or admin should call routes; route-level ownership enforced
-		rec.checkOut = new Date()
+		const now = new Date()
+		// Ensure there was a check-in before checking out
+		if (!rec.checkIn)
+			return sendError(res, 'Cannot check out before check in', 400)
+		// Prevent double check-out
+		if (rec.checkOut)
+			return sendError(res, 'Attendance already checked out', 409)
+
+		rec.checkOut = now
 		await rec.save()
 
 		safeAuditLog({
