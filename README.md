@@ -11,7 +11,15 @@ Designed to be **easy to run locally**, easy to read, and easy to extend.
 
 ```
 root/
-├── client/                      # React + Vite frontend
+├── .env                        # JWT_KEY (required for Docker)
+├── docker-compose.yml          # Production: 3 services (mongodb, server, client)
+├── docker-compose.override.yml # Dev overrides (hot reload, volume mounts)
+├── .dockerignore
+├── shared/src/                 # Shared TypeScript types (client + server)
+│
+├── client/                     # React + Vite frontend
+│   ├── Dockerfile              # Multi-stage (Bun build → nginx serve)
+│   ├── nginx.conf              # Reverse-proxies /api → server:5000
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── tsconfig.*
@@ -21,27 +29,26 @@ root/
 │       ├── App.tsx
 │       ├── index.css
 │       ├── assets/
-│       ├── components/           # shared UI (DataTable, Navbar, layout/)
-│       ├── pages/                # route views (Employees, Payroll, Users)
-│       ├── context/              # AuthContext, ToastContext, etc.
-│       ├── utils/                # api.ts, cn.ts, hooks, validators
-│       └── tests/                # Vitest tests
-|
-└── server/                      # Express + TypeScript backend
+│       ├── components/         # shared UI (DataTable, Navbar, layout/)
+│       ├── pages/              # route views (Employees, Payroll, Users)
+│       ├── context/            # AuthContext, ToastContext, etc.
+│       ├── utils/              # api.ts, cn.ts, hooks, validators
+│       └── tests/              # Vitest tests
+│
+└── server/                     # Express + TypeScript backend
+  ├── Dockerfile                # Bun single-stage (Bun runs TS natively)
   ├── package.json
   ├── tsconfig.json
-  ├── index.ts                 # entry (starts the server)
-  ├── app.ts                   # express app setup and middleware
-  ├── controllers/             # auth, employees, departments, payroll
-  ├── routes/                  # route registration
-  ├── models/                  # Mongoose schemas (User, AuditLog, Department)
-  ├── middleware/              # auth, requirePermission, validation handlers
-  ├── utils/                   # apiResponse, auditLogger, permissions
-  ├── scripts/                 # userSeed.ts
-  └── tests/                   # Jest tests
+  ├── index.ts                # entry (starts the server)
+  ├── app.ts                  # express app setup and middleware
+  ├── controllers/            # auth, employees, departments, payroll
+  ├── routes/                 # route registration
+  ├── models/                 # Mongoose schemas (User, AuditLog, Department)
+  ├── middleware/             # auth, requirePermission, validation handlers
+  ├── utils/                  # apiResponse, auditLogger, permissions
+  ├── userSeed.ts             # database seeding
+  └── tests/                  # Jest tests
 ```
-
-> Repo contains `client/` and `server/` only frontend and backend are separated for clarity.
 
 ---
 
@@ -95,12 +102,13 @@ This application follows **industry-standard security practices** to protect dat
 
 ---
 
-## 🚀 Getting Started (Local Development)
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - **Bun** (recommended) or **Node.js 16+**
 - **MongoDB** (local or hosted)
+- **Docker & Docker Compose** (optional — see Docker setup below)
 
 ---
 
@@ -159,6 +167,35 @@ http://localhost:5173
 
 ---
 
+### Docker (alternative — no local runtime needed)
+
+Run the entire stack (server, client, MongoDB) without installing Bun/Node locally:
+
+```bash
+# Create root .env for JWT_KEY (required)
+echo "JWT_KEY=your_secret_key" > .env
+
+# Build images
+docker compose build
+
+# Start in dev mode (hot reload)
+docker compose up
+```
+
+Frontend: `http://localhost:5173` (Vite dev server)  
+Backend API: `http://localhost:5000`
+
+For production mode (nginx-served client, compiled server):
+
+```bash
+docker compose -f docker-compose.yml up
+```
+
+Frontend: `http://localhost` (nginx → React SPA)  
+Backend API: `http://localhost:5000`
+
+---
+
 ## 🌱 Database Seeding
 
 Populate the database with development users:
@@ -166,6 +203,12 @@ Populate the database with development users:
 ```pwsh
 cd server
 bun run seed
+```
+
+Or with Docker:
+
+```bash
+docker compose exec server bun run seed
 ```
 
 ⚠️ **Warning**
@@ -176,19 +219,24 @@ This will permanently delete all data.
 
 ## 🧹 Cleanup
 
-Remove dependencies and caches (PowerShell):
+Remove dependencies and caches:
 
-```pwsh
-Remove-Item -Recurse -Force server\node_modules
-Remove-Item -Recurse -Force client\node_modules
+```bash
+rm -rf server/node_modules client/node_modules
 bun cache clear
 ```
 
 Remove build artifacts:
 
-```pwsh
-Remove-Item -Recurse -Force client\dist
-Remove-Item -Recurse -Force server\dist
+```bash
+rm -rf client/dist server/dist
+```
+
+Docker cleanup:
+
+```bash
+docker compose down -v        # stop containers + delete MongoDB volume
+docker compose down --rmi all  # stop + delete all built images
 ```
 
 ---
@@ -215,6 +263,12 @@ bun run test
 - Check for port conflicts if the server fails to start
 - Delete `node_modules` and reinstall if dependencies break
 - Use **PowerShell** on Windows, POSIX shell on macOS/Linux
+
+**Docker:**
+
+- If `docker compose up` fails with `JWT_KEY is required`, create a root `.env` file with `JWT_KEY=your_secret`
+- If port 80 is already in use, change the client port mapping in `docker-compose.yml` (e.g. `"8080:80"`)
+- For a fresh start: `docker compose down -v && docker compose build && docker compose up`
 
 ---
 

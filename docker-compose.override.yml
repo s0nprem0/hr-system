@@ -1,0 +1,21 @@
+services:
+  server:
+    command: bun run dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./server:/app/server
+      - /app/server/node_modules
+
+  client:
+    build:
+      target: builder
+    command: bun run dev --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    volumes:
+      - ./client:/app/client
+      - ./shared:/app/shared
+      - /app/client/node_modules
